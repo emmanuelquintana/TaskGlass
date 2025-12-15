@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model tg_column {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspace_id String         @db.Uuid
+  key          tg_task_status
+  title        String
+  sort_order   Int
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @default(now()) @db.Timestamptz(6)
+  tg_workspace tg_workspace   @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([workspace_id, key])
+}
+
+model tg_daily_run {
+  workspace_id String       @db.Uuid
+  run_date     DateTime     @db.Date
+  created_at   DateTime     @default(now()) @db.Timestamptz(6)
+  tg_workspace tg_workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([workspace_id, run_date])
+}
+
+model tg_recurrence_template {
+  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspace_id               String                       @db.Uuid
+  title                      String
+  description                String?
+  status_default             tg_task_status               @default(todo)
+  priority                   Int                          @default(3) @db.SmallInt
+  cadence                    String                       @default("daily")
+  is_active                  Boolean                      @default(true)
+  created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  tg_workspace               tg_workspace                 @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tg_recurrence_template_tag tg_recurrence_template_tag[]
+  tg_task                    tg_task[]
+}
+
+model tg_recurrence_template_tag {
+  template_id            String                 @db.Uuid
+  tag_id                 String                 @db.Uuid
+  tg_tag                 tg_tag                 @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tg_recurrence_template tg_recurrence_template @relation(fields: [template_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([template_id, tag_id])
+}
+
+model tg_saved_view {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspace_id String       @db.Uuid
+  name         String
+  filters      Json         @default("{}")
+  sort         Json         @default("{}")
+  created_at   DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime     @default(now()) @db.Timestamptz(6)
+  tg_workspace tg_workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([workspace_id, name])
+}
+
+model tg_tag {
+  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspace_id               String                       @db.Uuid
+  group_key                  String
+  name                       String
+  color                      String?
+  created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  tg_recurrence_template_tag tg_recurrence_template_tag[]
+  tg_workspace               tg_workspace                 @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tg_task_tag                tg_task_tag[]
+
+  @@unique([workspace_id, group_key, name])
+}
+
+model tg_task {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspace_id           String                  @db.Uuid
+  title                  String
+  description            String?
+  status                 tg_task_status          @default(todo)
+  priority               Int                     @default(3) @db.SmallInt
+  due_date               DateTime?               @db.Date
+  sort_order             Int                     @default(0)
+  template_id            String?                 @db.Uuid
+  created_at             DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                @default(now()) @db.Timestamptz(6)
+  tg_recurrence_template tg_recurrence_template? @relation(fields: [template_id], references: [id], onUpdate: NoAction)
+  tg_workspace           tg_workspace            @relation(fields: [workspace_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tg_task_tag            tg_task_tag[]
+
+  @@index([workspace_id, due_date], map: "tg_task_workspace_due_idx")
+  @@index([workspace_id, status], map: "tg_task_workspace_status_idx")
+}
+
+model tg_task_tag {
+  task_id    String   @db.Uuid
+  tag_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  tg_tag     tg_tag   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tg_task    tg_task  @relation(fields: [task_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([task_id, tag_id])
+}
+
+model tg_workspace {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                   String                   @unique
+  name                   String
+  description            String?
+  created_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamptz(6)
+  tg_column              tg_column[]
+  tg_daily_run           tg_daily_run[]
+  tg_recurrence_template tg_recurrence_template[]
+  tg_saved_view          tg_saved_view[]
+  tg_tag                 tg_tag[]
+  tg_task                tg_task[]
+}
+
+enum tg_task_status {
+  todo
+  in_progress
+  blocked
+  done
+}

@@ -1,0 +1,83 @@
+# =========================
+# OS / Editors
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.idea/
+*.iml
+
+# =========================
+# Node / JS / TS
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npmrc
+
+# Build outputs
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# Vite / React / Next cache
+.vite/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+# =========================
+# Env / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# Supabase local (si algún día lo usas)
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# =========================
+# Prisma
+# =========================
+# Prisma client generated output (si generas a carpeta custom)
+generated/
+prisma/generated/
+**/generated/prisma/
+**/generated/prisma/**
+# Default prisma engine caches (safe)
+.prisma/
+
+# =========================
+# Logs / temp
+# =========================
+logs/
+*.log
+
+# =========================
+# Tests / reports
+# =========================
+junit.xml
+report.xml
+
+# =========================
+# Misc
+# =========================
+*.pem
+*.key
+*.crt
+certs/
