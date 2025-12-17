@@ -9,5 +9,8 @@ export const errorCodes = {
   workspace: {
     notFound: 'TG_WS_404',
     conflict: 'TG_WS_409'
+  },
+  column: {
+    notFound: 'TG_COL_404'
   }
 } as const;
