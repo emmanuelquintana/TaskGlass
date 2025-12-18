@@ -12,5 +12,8 @@ export const errorCodes = {
   },
   column: {
     notFound: 'TG_COL_404'
+  },
+  task: {
+    notFound: 'TG_TS_404'
   }
 } as const;
