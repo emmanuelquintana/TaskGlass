@@ -15,5 +15,8 @@ export const errorCodes = {
   },
   task: {
     notFound: 'TG_TS_404'
+  },
+  recurrenceTemplate: {
+    notFound: 'TG_RT_404'
   }
 } as const;
