@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { WorkspaceNotFoundException } from '../workspace/errors/workspace-not-found.exception';
 import { BoardModel } from './models/board.model';
 import { BoardColumnModel } from './models/board-column.model';
-import { BoardTaskModel } from './models/board-task.model';
-import { BoardTagModel } from './models/board-tag.model';
-import { BoardWorkspaceNotFoundException } from './errors/board-workspace-not-found.exception';
-
-type ExistsRow = { exists: boolean };
+import { TaskModel } from '../task/models/task.model';
 
 type ColumnRow = {
     id: string;
@@ -17,34 +14,46 @@ type ColumnRow = {
 
 type TaskRow = {
     id: string;
+    workspaceId: string;
+    status: string;
     title: string;
     description: string | null;
-    status: string;
     priority: number;
     dueDate: string | null;
     sortOrder: number;
     templateId: string | null;
-    tags: any; // jsonb aggregated
+    createdAt: Date | null;
+    updatedAt: Date | null;
 };
 
-/**
- * BoardService returns an aggregated view for rendering a Kanban board.
- */
 @Injectable()
 export class BoardService {
     constructor(private readonly prisma: PrismaService) { }
 
     private async assertWorkspaceExists(workspaceId: string): Promise<void> {
-        const ws = await this.prisma.$queryRaw<ExistsRow[]>`
-      select exists(
-        select 1 from tg_workspace
-        where id = ${workspaceId}::uuid
-      ) as "exists"
+        const ws = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+      select exists(select 1 from tg_workspace where id = ${workspaceId}::uuid) as "exists"
     `;
-        if (!ws[0]?.exists) throw new BoardWorkspaceNotFoundException();
+        if (!ws[0]?.exists) throw new WorkspaceNotFoundException();
     }
 
-    async getBoard(workspaceId: string, date?: string): Promise<BoardModel> {
+    private mapTask(r: TaskRow): TaskModel {
+        return {
+            id: r.id,
+            workspaceId: r.workspaceId,
+            status: r.status,
+            title: r.title,
+            description: r.description ?? undefined,
+            priority: r.priority,
+            dueDate: r.dueDate ?? undefined,
+            sortOrder: r.sortOrder,
+            templateId: r.templateId ?? undefined,
+            createdAt: r.createdAt ? r.createdAt.toISOString() : undefined,
+            updatedAt: r.updatedAt ? r.updatedAt.toISOString() : undefined
+        };
+    }
+
+    async getBoard(workspaceId: string, runDate?: string): Promise<BoardModel> {
         await this.assertWorkspaceExists(workspaceId);
 
         const columns = await this.prisma.$queryRaw<ColumnRow[]>`
@@ -58,89 +67,58 @@ export class BoardService {
       order by sort_order asc
     `;
 
-        const tasks = date
-            ? await this.prisma.$queryRaw<TaskRow[]>`
-          select
-            t.id::text as id,
-            t.title,
-            t.description,
-            t.status::text as status,
-            t.priority::int as priority,
-            t.due_date::text as "dueDate",
-            t.sort_order::int as "sortOrder",
-            t.template_id::text as "templateId",
-            coalesce(
-              jsonb_agg(
-                distinct jsonb_build_object(
-                  'id', g.id::text,
-                  'groupKey', g.group_key,
-                  'name', g.name,
-                  'color', g.color
-                )
-              ) filter (where g.id is not null),
-              '[]'::jsonb
-            ) as tags
-          from tg_task t
-          left join tg_task_tag tt on tt.task_id = t.id
-          left join tg_tag g on g.id = tt.tag_id
-          where t.workspace_id = ${workspaceId}::uuid
-            and t.due_date = ${date}::date
-          group by t.id
-          order by t.status asc, t.sort_order asc, t.created_at asc
-        `
-            : await this.prisma.$queryRaw<TaskRow[]>`
-          select
-            t.id::text as id,
-            t.title,
-            t.description,
-            t.status::text as status,
-            t.priority::int as priority,
-            t.due_date::text as "dueDate",
-            t.sort_order::int as "sortOrder",
-            t.template_id::text as "templateId",
-            coalesce(
-              jsonb_agg(
-                distinct jsonb_build_object(
-                  'id', g.id::text,
-                  'groupKey', g.group_key,
-                  'name', g.name,
-                  'color', g.color
-                )
-              ) filter (where g.id is not null),
-              '[]'::jsonb
-            ) as tags
-          from tg_task t
-          left join tg_task_tag tt on tt.task_id = t.id
-          left join tg_tag g on g.id = tt.tag_id
-          where t.workspace_id = ${workspaceId}::uuid
-          group by t.id
-          order by t.status asc, t.sort_order asc, t.created_at asc
-        `;
+        const tasks = await this.prisma.$queryRaw<TaskRow[]>`
+      select
+        id::text as id,
+        workspace_id::text as "workspaceId",
+        status::text as status,
+        title,
+        description,
+        priority::int as priority,
+        due_date::text as "dueDate",
+        sort_order::int as "sortOrder",
+        template_id::text as "templateId",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      from tg_task
+      where workspace_id = ${workspaceId}::uuid
+        and (
+          (${runDate ?? null}::date is null and due_date is null)
+          or
+          (${runDate ?? null}::date is not null and (due_date = ${runDate ?? null}::date or due_date is null))
+        )
+      order by
+        case status::text
+          when 'todo' then 1
+          when 'in_progress' then 2
+          when 'blocked' then 3
+          when 'done' then 4
+          else 99
+        end asc,
+        sort_order asc,
+        created_at asc
+    `;
 
-        const mappedColumns: BoardColumnModel[] = columns.map((c) => ({
+        const tasksByStatus = new Map<string, TaskModel[]>();
+        for (const t of tasks) {
+            const key = t.status;
+            const arr = tasksByStatus.get(key) ?? [];
+            arr.push(this.mapTask(t));
+            tasksByStatus.set(key, arr);
+        }
+
+        const boardColumns: BoardColumnModel[] = columns.map((c) => ({
             id: c.id,
             key: c.key,
             title: c.title,
-            sortOrder: c.sortOrder
-        }));
-
-        const mappedTasks: BoardTaskModel[] = tasks.map((t) => ({
-            id: t.id,
-            title: t.title,
-            description: t.description,
-            status: t.status,
-            priority: t.priority,
-            dueDate: t.dueDate,
-            sortOrder: t.sortOrder,
-            templateId: t.templateId,
-            tags: (Array.isArray(t.tags) ? t.tags : []) as BoardTagModel[]
+            sortOrder: c.sortOrder,
+            tasks: tasksByStatus.get(c.key) ?? []
         }));
 
         return {
             workspaceId,
-            date,
-            columns: mappedColumns,
-            tasks: mappedTasks
+            runDate: runDate ?? undefined,
+            columns: boardColumns
         };
     }
 }
