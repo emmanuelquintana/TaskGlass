@@ -8,9 +8,10 @@ import { TagModule } from './modules/tag/tag.module';
 import { RecurrenceTemplateTagModule } from './modules/recurrence-template-tag/recurrence-template-tag.module';
 import { SavedViewModule } from './modules/saved-view/saved-view.module';
 import { DailyRunModule } from './modules/daily-run/daily-run.module';
+import { BoardModule } from './modules/board/board.module';
 
 @Module({
   imports: [WorkspaceModule, PrismaModule, ColumnModule, TaskModule, RecurrenceModule, TagModule,
-    RecurrenceTemplateTagModule, SavedViewModule, DailyRunModule]
+    RecurrenceTemplateTagModule, SavedViewModule, DailyRunModule, BoardModule]
 })
 export class AppModule { }

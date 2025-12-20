@@ -35,6 +35,9 @@ export const errorCodes = {
   },
   dailyRun: {
     notFound: 'TG_DR_404'
+  },
+  board: {
+    workspaceNotFound: 'TG_BD_404'
   }
 
 } as const;
