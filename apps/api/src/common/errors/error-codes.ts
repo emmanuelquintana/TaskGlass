@@ -18,5 +18,15 @@ export const errorCodes = {
   },
   recurrenceTemplate: {
     notFound: 'TG_RT_404'
+  },
+  tag: {
+    notFound: 'TG_TG_404',
+    alreadyExists: 'TG_TG_409'
+  },
+  taskTag: {
+    workspaceMismatch: 'TG_TT_400'
+  },
+  recurrenceTemplateTag: {
+    workspaceMismatch: 'TG_RTT_400'
   }
 } as const;
