@@ -28,5 +28,9 @@ export const errorCodes = {
   },
   recurrenceTemplateTag: {
     workspaceMismatch: 'TG_RTT_400'
+  },
+  savedView: {
+    notFound: 'TG_SV_404',
+    alreadyExists: 'TG_SV_409'
   }
 } as const;

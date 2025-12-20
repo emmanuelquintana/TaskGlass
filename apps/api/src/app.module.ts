@@ -6,8 +6,10 @@ import { TaskModule } from './modules/task/task.module';
 import { RecurrenceModule } from './modules/recurrence/recurrence.module';
 import { TagModule } from './modules/tag/tag.module';
 import { RecurrenceTemplateTagModule } from './modules/recurrence-template-tag/recurrence-template-tag.module';
+import { SavedViewModule } from './modules/saved-view/saved-view.module';
 
 @Module({
-  imports: [WorkspaceModule, PrismaModule, ColumnModule, TaskModule, RecurrenceModule, TagModule, RecurrenceTemplateTagModule]
+  imports: [WorkspaceModule, PrismaModule, ColumnModule, TaskModule, RecurrenceModule, TagModule,
+    RecurrenceTemplateTagModule, SavedViewModule]
 })
 export class AppModule { }
