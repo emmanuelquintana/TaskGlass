@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TaskModel } from '../../task/models/task.model';
+import { BoardTaskModel } from './board-task.model';
 
 export class BoardColumnModel {
     @ApiProperty({ example: 'a8c0e465-cf47-4b12-bfac-25062a669cf2' })
@@ -14,6 +14,6 @@ export class BoardColumnModel {
     @ApiProperty({ example: 1 })
     sortOrder!: number;
 
-    @ApiProperty({ type: [TaskModel] })
-    tasks!: TaskModel[];
+    @ApiProperty({ type: [BoardTaskModel] })
+    tasks!: BoardTaskModel[];
 }

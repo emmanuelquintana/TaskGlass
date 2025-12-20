@@ -17,6 +17,6 @@ export class BoardController {
     @ResponseCode('TG_BD_200')
     @ApiOkResponseWrapped(BoardModel)
     async getBoard(@Param() p: WorkspaceIdParamDto, @Query() q: BoardQueryDto): Promise<BoardModel> {
-        return this.boardService.getBoard(p.workspaceId, q.runDate);
+        return this.boardService.getBoard(p.workspaceId, q.runDate, q.savedViewId);
     }
 }
