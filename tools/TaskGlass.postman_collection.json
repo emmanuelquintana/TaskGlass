@@ -1,0 +1,1459 @@
+{
+    "info": {
+        "name": "TaskGlass API",
+        "description": "Auto-generated Postman collection for TaskGlass API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000/v1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Workspaces",
+            "item": [
+                {
+                    "name": "List Workspaces",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces"
+                            ],
+                            "variable": []
+                        }
+                    }
+                },
+                {
+                    "name": "Create Workspace",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces"
+                            ],
+                            "variable": []
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"My Workspace\",\n  \"key\": \"main\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Workspace",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Workspace",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Updated Name\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Workspace",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Columns",
+            "item": [
+                {
+                    "name": "List Columns",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/columns",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "columns"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Daily Runs",
+            "item": [
+                {
+                    "name": "List Daily Runs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "description": "Query param from"
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "description": "Query param to"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Daily Run",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs/:runDate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs",
+                                ":runDate"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                },
+                                {
+                                    "key": "runDate",
+                                    "value": "",
+                                    "description": "Value for runDate"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Upsert Daily Run",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs/:runDate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs",
+                                ":runDate"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                },
+                                {
+                                    "key": "runDate",
+                                    "value": "",
+                                    "description": "Value for runDate"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Daily Run",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs/:runDate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs",
+                                ":runDate"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                },
+                                {
+                                    "key": "runDate",
+                                    "value": "",
+                                    "description": "Value for runDate"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate Daily Tasks",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs/:runDate/tasks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs",
+                                ":runDate",
+                                "tasks"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                },
+                                {
+                                    "key": "runDate",
+                                    "value": "",
+                                    "description": "Value for runDate"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Trigger Daily Run",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/daily-runs/run",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "daily-runs",
+                                "run"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"runDate\": \"2025-12-20\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Tasks",
+            "item": [
+                {
+                    "name": "List Tasks",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/tasks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "tasks"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "description": "Query param status"
+                                },
+                                {
+                                    "key": "q",
+                                    "value": "",
+                                    "description": "Query param q"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "description": "Query param page"
+                                },
+                                {
+                                    "key": "size",
+                                    "value": "",
+                                    "description": "Query param size"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Task",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/tasks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "tasks"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"New Task\",\n  \"status\": \"todo\",\n  \"priority\": 1\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Task",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tasks/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tasks",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Task",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tasks/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tasks",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Updated Title\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Update Status",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tasks/:id/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tasks",
+                                ":id",
+                                "status"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"in_progress\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Task",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tasks/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tasks",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Tags (Task)",
+                    "item": [
+                        {
+                            "name": "List Task Tags",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/tasks/:taskId/tags",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "tasks",
+                                        ":taskId",
+                                        "tags"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "taskId",
+                                            "value": "",
+                                            "description": "Value for taskId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Attach Tag",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/tasks/:taskId/tags/:tagId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "tasks",
+                                        ":taskId",
+                                        "tags",
+                                        ":tagId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "taskId",
+                                            "value": "",
+                                            "description": "Value for taskId"
+                                        },
+                                        {
+                                            "key": "tagId",
+                                            "value": "",
+                                            "description": "Value for tagId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Detach Tag",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/tasks/:taskId/tags/:tagId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "tasks",
+                                        ":taskId",
+                                        "tags",
+                                        ":tagId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "taskId",
+                                            "value": "",
+                                            "description": "Value for taskId"
+                                        },
+                                        {
+                                            "key": "tagId",
+                                            "value": "",
+                                            "description": "Value for tagId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Replace Tags",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/tasks/:taskId/tags",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "tasks",
+                                        ":taskId",
+                                        "tags"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "taskId",
+                                            "value": "",
+                                            "description": "Value for taskId"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"tagIds\": [\n    \"id1\",\n    \"id2\"\n  ]\n}"
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Tags",
+            "item": [
+                {
+                    "name": "List Tags",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/tags",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "tags"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ],
+                            "query": [
+                                {
+                                    "key": "groupKey",
+                                    "value": "",
+                                    "description": "Query param groupKey"
+                                },
+                                {
+                                    "key": "q",
+                                    "value": "",
+                                    "description": "Query param q"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Tag",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/tags",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "tags"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"My Tag\",\n  \"groupKey\": \"general\",\n  \"color\": \"#ff0000\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Tag",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tags/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tags",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Tag",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tags/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tags",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Renamed Tag\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Tag",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/tags/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "tags",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Recurrence",
+            "item": [
+                {
+                    "name": "List Templates",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/recurrence-templates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "recurrence-templates"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Template",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/recurrence-templates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "recurrence-templates"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Daily Standup\",\n  \"rrule\": \"FREQ=DAILY\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Template",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/recurrence-templates/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "recurrence-templates",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Template",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/recurrence-templates/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "recurrence-templates",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Updated Title\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Set Active",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/recurrence-templates/:id/active",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "recurrence-templates",
+                                ":id",
+                                "active"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"active\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Tags (Template)",
+                    "item": [
+                        {
+                            "name": "List Template Tags",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/recurrence-templates/:templateId/tags",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "recurrence-templates",
+                                        ":templateId",
+                                        "tags"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "templateId",
+                                            "value": "",
+                                            "description": "Value for templateId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Attach Tag",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/recurrence-templates/:templateId/tags/:tagId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "recurrence-templates",
+                                        ":templateId",
+                                        "tags",
+                                        ":tagId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "templateId",
+                                            "value": "",
+                                            "description": "Value for templateId"
+                                        },
+                                        {
+                                            "key": "tagId",
+                                            "value": "",
+                                            "description": "Value for tagId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Detach Tag",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/recurrence-templates/:templateId/tags/:tagId",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "recurrence-templates",
+                                        ":templateId",
+                                        "tags",
+                                        ":tagId"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "templateId",
+                                            "value": "",
+                                            "description": "Value for templateId"
+                                        },
+                                        {
+                                            "key": "tagId",
+                                            "value": "",
+                                            "description": "Value for tagId"
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "name": "Replace Tags",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/recurrence-templates/:templateId/tags",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "recurrence-templates",
+                                        ":templateId",
+                                        "tags"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "templateId",
+                                            "value": "",
+                                            "description": "Value for templateId"
+                                        }
+                                    ]
+                                },
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"tagIds\": []\n}"
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Saved Views",
+            "item": [
+                {
+                    "name": "List Saved Views",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/saved-views",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "saved-views"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Saved View",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/saved-views",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "saved-views"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"My View\",\n  \"filters\": {\n    \"status\": [\n      \"todo\"\n    ]\n  },\n  \"sort\": {\n    \"by\": \"createdAt\",\n    \"dir\": \"desc\"\n  }\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Get Saved View",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/saved-views/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "saved-views",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Saved View",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/saved-views/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "saved-views",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"New Name\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Saved View",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/saved-views/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "saved-views",
+                                ":id"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": "Value for id"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Board",
+            "item": [
+                {
+                    "name": "Get Board",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/workspaces/:workspaceId/board",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "workspaces",
+                                ":workspaceId",
+                                "board"
+                            ],
+                            "variable": [
+                                {
+                                    "key": "workspaceId",
+                                    "value": "",
+                                    "description": "Value for workspaceId"
+                                }
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "description": "Query param date"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
