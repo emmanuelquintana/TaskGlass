@@ -7,12 +7,44 @@ Current status: backend foundation is implemented (NestJS + Supabase Postgres), 
 ## Features (current)
 - REST API (NestJS)
 - Supabase Postgres connection (pooler/session)
-- Workspace CRUD:
+- **Workspaces Module**:
   - `GET /v1/workspaces`
   - `POST /v1/workspaces`
   - `GET /v1/workspaces/:id`
   - `PATCH /v1/workspaces/:id`
   - `DELETE /v1/workspaces/:id` (soft delete)
+- **Columns Module**:
+  - `GET /v1/workspaces/:workspaceId/columns`
+- **Daily Runs Module**:
+  - `GET /v1/workspaces/:workspaceId/daily-runs`
+  - `GET /v1/workspaces/:workspaceId/daily-runs/:runDate`
+  - `PUT /v1/workspaces/:workspaceId/daily-runs/:runDate`
+  - `DELETE /v1/workspaces/:workspaceId/daily-runs/:runDate`
+- **Tasks Module**:
+  - `GET /v1/workspaces/:workspaceId/tasks` (List/Search)
+  - `POST /v1/workspaces/:workspaceId/tasks`
+  - `GET /v1/tasks/:id`
+  - `PATCH /v1/tasks/:id`
+  - `PATCH /v1/tasks/:id/status`
+  - `DELETE /v1/tasks/:id`
+- **Tags Module**:
+  - `GET /v1/workspaces/:workspaceId/tags`
+  - `POST /v1/workspaces/:workspaceId/tags`
+  - `GET /v1/tags/:id`
+  - `PATCH /v1/tags/:id`
+  - `DELETE /v1/tags/:id`
+- **Recurrence Module**:
+  - `GET /v1/workspaces/:workspaceId/recurrence-templates`
+  - `POST /v1/workspaces/:workspaceId/recurrence-templates`
+  - `GET /v1/recurrence-templates/:id`
+  - `PATCH /v1/recurrence-templates/:id`
+  - `PATCH /v1/recurrence-templates/:id/active`
+- **Saved Views Module**:
+  - `GET /v1/workspaces/:workspaceId/saved-views`
+  - `POST /v1/workspaces/:workspaceId/saved-views`
+  - `GET /v1/saved-views/:id`
+  - `PATCH /v1/saved-views/:id`
+  - `DELETE /v1/saved-views/:id`
 - Standard response envelope:
   ```json
   {
@@ -78,7 +110,5 @@ npm run start:dev
 - Workspace deletion is implemented as soft delete.
 
 ## Roadmap (next)
-- Columns module (`tg_column`) CRUD (rename/reorder per workspace)
-- Tasks module (kanban tasks, filters, status moves)
 - Frontend UI (Liquid Glass inspired)
 - Auth (optional, if needed later)

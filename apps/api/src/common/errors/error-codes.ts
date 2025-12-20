@@ -32,5 +32,9 @@ export const errorCodes = {
   savedView: {
     notFound: 'TG_SV_404',
     alreadyExists: 'TG_SV_409'
+  },
+  dailyRun: {
+    notFound: 'TG_DR_404'
   }
+
 } as const;
