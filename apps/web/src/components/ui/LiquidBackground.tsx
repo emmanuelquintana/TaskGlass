@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
     intensity?: number; // 0.6..1.2

@@ -48,54 +48,51 @@
   transform: translateZ(0);
 }
 
-/* La “lámina” de vidrio: aquí va blur + refracción */
+/* La "lámina" de vidrio: Blur limpio + Tinte */
 .tg-liquid::before,
 .liquid-glass::before,
 .liquid-surface::before {
   content: "";
   position: absolute;
-  inset: -12%;
+  inset: 0;
   border-radius: inherit;
 
-  background: rgba(var(--lg-bg-rgb), var(--lg-a));
+  /* Fondo base muy sutil */
+  background: rgba(255, 255, 255, 0.03);
 
-  backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(112%);
-  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(112%);
+  /* Solo blur y corrección de color, SIN distorsión aquí para mantener bordes limpios */
+  backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
 
-  /* La clave: distorsión */
-  filter: url(#tg-liquid-glass-distort);
-
-  /* Suaviza */
-  opacity: 1;
-  transform: translateZ(0);
-
-  transition: background var(--lg-dur) var(--lg-ease);
+  z-index: -2;
+  transition: opacity var(--lg-dur) ease;
 }
 
-/* Brillos + overlay + “specular” + (opcional) grain */
+/* La capa de "Refracción Simulada" (Caustics) */
 .tg-liquid::after,
 .liquid-glass::after,
 .liquid-surface::after {
   content: "";
   position: absolute;
-  inset: 0;
+  /* Un poco más grande para evitar bordes cortados al distorsionar */
+  inset: -10%;
   border-radius: inherit;
   pointer-events: none;
+  z-index: -1;
 
+  /* Textura de luz que será distorsionada */
   background:
-    radial-gradient(700px circle at var(--mx, 35%) var(--my, 20%),
-      rgba(255, 255, 255, 0.22),
-      transparent 55%),
-    radial-gradient(900px 520px at 20% 0%,
-      rgba(255, 255, 255, 0.10),
-      transparent 60%),
-    linear-gradient(135deg,
-      rgba(255, 255, 255, var(--lg-overlay-a)),
-      transparent 45%);
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.2), transparent 50%),
+    linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
 
-  /* “Apple highlight” */
-  mix-blend-mode: screen;
-  opacity: 0.85;
+  /* CLAVE: Overlay hace que parezca que el fondo de atrás está cambiando de brillo */
+  mix-blend-mode: overlay;
+  opacity: 0.8;
+
+  /* Aquí aplicamos la distorsión SVG solo a esta capa de luz */
+  filter: url(#tg-liquid-glass-distort);
+  transform: translateZ(0);
 }
 
 /* Grain SOLO cuando agregas .tg-grain */

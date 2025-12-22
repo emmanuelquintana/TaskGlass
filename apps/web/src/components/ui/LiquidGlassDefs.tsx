@@ -1,5 +1,3 @@
-// src/components/ui/LiquidGlassDefs.tsx
-import React from "react";
 
 export function LiquidGlassDefs() {
     return (
@@ -15,25 +13,25 @@ export function LiquidGlassDefs() {
                 >
                     <feTurbulence
                         type="fractalNoise"
-                        baseFrequency="0.006"
-                        numOctaves="2"
+                        baseFrequency="0.003"
+                        numOctaves="1"
                         seed="8"
                         result="noise"
                     >
-                        {/* micro movimiento lento */}
-                        <animate attributeName="baseFrequency" dur="24s" values="0.0055;0.0065;0.0055" repeatCount="indefinite" />
+                        {/* Distorsión lenta y pesada */}
+                        <animate attributeName="baseFrequency" dur="25s" values="0.0025;0.0035;0.0025" repeatCount="indefinite" />
                     </feTurbulence>
 
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="60"
+                        scale="120"
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    {/* suaviza el ruido para que parezca líquido, no granulado */}
-                    <feGaussianBlur stdDeviation="0.5" />
+                    {/* suavizado fuerte para efecto de lente */}
+                    <feGaussianBlur stdDeviation="1.5" />
                 </filter>
 
                 {/* Strong: hover/active más “liquid” */}
@@ -45,23 +43,23 @@ export function LiquidGlassDefs() {
                 >
                     <feTurbulence
                         type="fractalNoise"
-                        baseFrequency="0.008"
-                        numOctaves="2"
+                        baseFrequency="0.004"
+                        numOctaves="1"
                         seed="9"
                         result="noise"
                     >
-                        <animate attributeName="baseFrequency" dur="18s" values="0.0075;0.0085;0.0075" repeatCount="indefinite" />
+                        <animate attributeName="baseFrequency" dur="18s" values="0.0035;0.0045;0.0035" repeatCount="indefinite" />
                     </feTurbulence>
 
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="80"
+                        scale="160"
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    <feGaussianBlur stdDeviation="0.8" />
+                    <feGaussianBlur stdDeviation="2.0" />
                 </filter>
             </defs>
         </svg>
