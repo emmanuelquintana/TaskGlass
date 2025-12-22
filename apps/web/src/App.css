@@ -1,36 +1,66 @@
 :root {
-  /* ...lo tuyo... */
-
-  /* Apple-like (notorio y fino) */
-  --lg-a: 0.12;
-  --lg-a-hover: 0.16;
-  --lg-blur: 30px;
-  /* Blur más fuerte para mezclar la distorsión */
+  /* LIGHT Mode Defaults (Glass) */
+  --lg-a: 0.40;
+  /* Más opaco en light para que se note el material */
+  --lg-a-hover: 0.50;
+  --lg-blur: 16px;
 
   --lg-border-w: 1px;
-  --lg-border-a: 0.35;
+  --lg-border-a: 0.20;
 
   --lg-radius: 22px;
 
-  /* sombra con “rim” interno GRUESO */
+  /* Sombra Light: Suave y difusa */
   --lg-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 0 20px rgba(255, 255, 255, 0.05),
-    /* Volumen interior */
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    /* Borde superior nítido */
-    inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+    0 20px 60px rgba(0, 0, 0, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    /* Borde blanco brillante */
+    inset 0 0 20px rgba(255, 255, 255, 0.5),
+    /* Volumen */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+
+  --lg-bg-tint: rgba(255, 255, 255, 0.10);
+  /* Tinte bajo para ver el fondo */
+  /* Leche */
+
+  /* Caustics Light: Sombras oscuras */
+  --lg-caustic-blend: multiply;
+  --lg-caustic-opacity: 0.6;
+  --lg-caustic-grad:
+    radial-gradient(circle at 50% 0%, rgba(0, 0, 0, 0.1), transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(0, 0, 0, 0.05), transparent 50%);
+}
+
+.dark {
+  /* DARK Mode Overrides */
+  --lg-a: 0.12;
+  --lg-a-hover: 0.16;
+  --lg-blur: 12px;
+
+  --lg-border-a: 0.40;
+
+  --lg-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.40),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 0 24px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+
+  --lg-bg-tint: rgba(255, 255, 255, 0.03);
+
+  /* Caustics Dark: Luces brillantes */
+  --lg-caustic-blend: overlay;
+  --lg-caustic-opacity: 0.8;
+  --lg-caustic-grad:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.2), transparent 50%),
+    linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 /* ==========================================================
-   TRUE LIQUID GLASS (Apple-feel)
-   - Refracción con SVG filter (sin afectar el texto)
-   - Blur + saturate/contrast
-   - Shine + grain
+   TRUE LIQUID GLASS
    ========================================================== */
 
-/* Alias para que tu UI actual sí aplique el material */
 .tg-liquid,
 .liquid-glass,
 .liquid-surface {
@@ -42,13 +72,11 @@
   border: var(--lg-border-w) solid rgba(255, 255, 255, var(--lg-border-a));
   box-shadow: var(--lg-shadow);
 
-  /* Importante: el fondo real vive en ::before */
   background: transparent;
-
   transform: translateZ(0);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-/* La "lámina" de vidrio: Blur limpio + Tinte */
 .tg-liquid::before,
 .liquid-glass::before,
 .liquid-surface::before {
@@ -57,42 +85,33 @@
   inset: 0;
   border-radius: inherit;
 
-  /* Fondo base muy sutil */
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--lg-bg-tint);
 
-  /* Solo blur y corrección de color, SIN distorsión aquí para mantener bordes limpios */
   backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
   -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
 
   z-index: -2;
-  transition: opacity var(--lg-dur) ease;
+  transition: background 0.3s ease;
 }
 
-/* La capa de "Refracción Simulada" (Caustics) */
 .tg-liquid::after,
 .liquid-glass::after,
 .liquid-surface::after {
   content: "";
   position: absolute;
-  /* Un poco más grande para evitar bordes cortados al distorsionar */
   inset: -10%;
   border-radius: inherit;
   pointer-events: none;
   z-index: -1;
 
-  /* Textura de luz que será distorsionada */
-  background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
-    radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.2), transparent 50%),
-    linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: var(--lg-caustic-grad);
 
-  /* CLAVE: Overlay hace que parezca que el fondo de atrás está cambiando de brillo */
-  mix-blend-mode: overlay;
-  opacity: 0.8;
+  mix-blend-mode: var(--lg-caustic-blend);
+  opacity: var(--lg-caustic-opacity);
 
-  /* Aquí aplicamos la distorsión SVG solo a esta capa de luz */
   filter: url(#tg-liquid-glass-distort);
   transform: translateZ(0);
+  transition: opacity 0.3s ease;
 }
 
 /* Grain SOLO cuando agregas .tg-grain */

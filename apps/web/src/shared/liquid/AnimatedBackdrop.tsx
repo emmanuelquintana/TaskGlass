@@ -6,7 +6,7 @@ type Props = {
 };
 
 function isLightTheme() {
-    return document.documentElement.classList.contains("theme-light");
+    return !document.documentElement.classList.contains("dark");
 }
 
 export function AnimatedBackdrop({ fps = 30, scale = 0.6 }: Props) {
@@ -46,18 +46,18 @@ export function AnimatedBackdrop({ fps = 30, scale = 0.6 }: Props) {
 
             ctx.clearRect(0, 0, w, h);
 
-            // base negra
+            // base negra o blanca sutil
             ctx.globalCompositeOperation = "source-over";
-            ctx.fillStyle = isLightTheme() ? "rgba(245,247,255,1)" : "rgba(3,6,14,1)";
+            ctx.fillStyle = isLightTheme() ? "#f0f4f8" : "rgba(3,6,14,1)";
             ctx.fillRect(0, 0, w, h);
 
-            // “luces” (paletas)
+            // “luces” (paletas) - Light Mode ahora más VIBRANTE
             const palDark = ["#1b3bff", "#00c2ff", "#00ffb3", "#7c3aed", "#0ea5e9"];
-            const palLight = ["#7aa8ff", "#67e8f9", "#a7f3d0", "#c4b5fd", "#93c5fd"];
+            const palLight = ["#4f46e5", "#06b6d4", "#10b981", "#8b5cf6", "#3b82f6"]; // Indigo, Cyan, Emerald, Violet, Blue
             const pal = isLightTheme() ? palLight : palDark;
 
-            // screen/lighter para look “iOS”
-            ctx.globalCompositeOperation = "screen";
+            // screen/lighter para look “iOS” en Dark, Multiply para “acuarela” en Light
+            ctx.globalCompositeOperation = isLightTheme() ? "multiply" : "screen";
 
             const blobs = [
                 { a: 0.90, r: 0.55, sx: 0.18, sy: 0.22, kx: 0.9, ky: 0.8, c: pal[0] },

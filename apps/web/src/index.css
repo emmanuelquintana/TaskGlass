@@ -4,11 +4,44 @@
    TOKENS
    ========================================================= */
 :root {
-  --tg-text: 229 231 235;
-  --tg-muted: 156 163 175;
+  /* Light Mode (Default) */
+  --tg-text: 17 24 39;
+  /* Gray 900 */
+  --tg-muted: 107 114 128;
+  /* Gray 500 */
+  --bg-body: #f3f4f6;
+  /* Gray 100 - Clean light background */
 
-  /* Glass (DOM) - solo borde/sombra, el "vidrio" real lo pinta WebGL */
+  /* Glass (DOM) - Light Mode */
   --glass-radius: 22px;
+  --glass-border-a: 0.15;
+  /* Borde sutil gris */
+  --glass-border-a-strong: 0.25;
+
+  --glass-shadow:
+    0 18px 55px rgba(0, 0, 0, 0.10),
+    /* Sombra suave */
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    /* Highlist blanco fuerte */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+
+  --glass-dom-fill-a: 0.04;
+
+  /* Animaciones */
+  --ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --dur: 240ms;
+}
+
+/* Dark Mode Override */
+.dark {
+  --tg-text: 229 231 235;
+  /* Gray 200 */
+  --tg-muted: 156 163 175;
+  /* Gray 400 */
+  --bg-body: #050813;
+  /* Deep Blue/Black */
+
+  /* Glass (DOM) - Dark Mode */
   --glass-border-a: 0.22;
   --glass-border-a-strong: 0.30;
 
@@ -17,29 +50,10 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(0, 0, 0, 0.30);
 
-  /* Un pelín de “tint” DOM (muy bajo) */
   --glass-dom-fill-a: 0.02;
-
-  /* Animaciones */
-  --ease: cubic-bezier(0.4, 0.0, 0.2, 1);
-  --dur: 240ms;
 }
 
-/* Theme light (si lo quieres) */
-.theme-light {
-  --tg-text: 17 24 39;
-  --tg-muted: 75 85 99;
-
-  --glass-border-a: 0.26;
-  --glass-border-a-strong: 0.34;
-
-  --glass-shadow:
-    0 18px 55px rgba(0, 0, 0, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
-
-  --glass-dom-fill-a: 0.06;
-}
+/* Eliminar .theme-light antiguo si existe */
 
 /* =========================================================
    BASE LAYOUT (FULLSCREEN)
@@ -54,8 +68,8 @@ body,
 body {
   margin: 0;
   color: rgb(var(--tg-text));
-  background: #050813;
-  /* base negra */
+  background: var(--bg-body);
+  transition: background 0.3s ease, color 0.3s ease;
   overflow: hidden;
 }
 
