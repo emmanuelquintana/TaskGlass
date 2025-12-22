@@ -6,6 +6,7 @@ export function LiquidGlassDefs() {
         <svg width="0" height="0" style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
             <defs>
                 {/* Standard: sutil pero evidente */}
+                {/* Standard: sutil pero evidente */}
                 <filter
                     id="tg-liquid-glass-distort"
                     x="-35%" y="-35%" width="170%" height="170%"
@@ -14,25 +15,25 @@ export function LiquidGlassDefs() {
                 >
                     <feTurbulence
                         type="fractalNoise"
-                        baseFrequency="0.010"
+                        baseFrequency="0.006"
                         numOctaves="2"
                         seed="8"
                         result="noise"
                     >
-                        {/* micro movimiento, MUY lento (no mata rendimiento) */}
-                        <animate attributeName="baseFrequency" dur="18s" values="0.009;0.011;0.009" repeatCount="indefinite" />
+                        {/* micro movimiento lento */}
+                        <animate attributeName="baseFrequency" dur="24s" values="0.0055;0.0065;0.0055" repeatCount="indefinite" />
                     </feTurbulence>
 
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="18"
+                        scale="60"
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    {/* suaviza artefactos */}
-                    <feGaussianBlur stdDeviation="0.15" />
+                    {/* suaviza el ruido para que parezca líquido, no granulado */}
+                    <feGaussianBlur stdDeviation="0.5" />
                 </filter>
 
                 {/* Strong: hover/active más “liquid” */}
@@ -44,23 +45,23 @@ export function LiquidGlassDefs() {
                 >
                     <feTurbulence
                         type="fractalNoise"
-                        baseFrequency="0.012"
+                        baseFrequency="0.008"
                         numOctaves="2"
                         seed="9"
                         result="noise"
                     >
-                        <animate attributeName="baseFrequency" dur="14s" values="0.011;0.013;0.011" repeatCount="indefinite" />
+                        <animate attributeName="baseFrequency" dur="18s" values="0.0075;0.0085;0.0075" repeatCount="indefinite" />
                     </feTurbulence>
 
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="28"
+                        scale="80"
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    <feGaussianBlur stdDeviation="0.18" />
+                    <feGaussianBlur stdDeviation="0.8" />
                 </filter>
             </defs>
         </svg>

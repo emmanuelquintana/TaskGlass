@@ -2,22 +2,25 @@
   /* ...lo tuyo... */
 
   /* Apple-like (notorio y fino) */
-  --lg-a: 0.08;
-  --lg-a-hover: 0.12;
-  --lg-blur: 22px;
+  --lg-a: 0.12;
+  --lg-a-hover: 0.16;
+  --lg-blur: 30px;
+  /* Blur más fuerte para mezclar la distorsión */
 
   --lg-border-w: 1px;
-  --lg-border-a: 0.22;
+  --lg-border-a: 0.35;
 
   --lg-radius: 22px;
 
-  /* sombra con “rim” interno (muy Apple) */
+  /* sombra con “rim” interno GRUESO */
   --lg-shadow:
-    0 18px 70px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.30);
-
-  --lg-overlay-a: 0.16;
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.05),
+    /* Volumen interior */
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    /* Borde superior nítido */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.20);
 }
 
 /* ==========================================================
