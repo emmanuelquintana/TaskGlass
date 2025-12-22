@@ -1,0 +1,160 @@
+:root {
+  /* ...lo tuyo... */
+
+  /* Apple-like (notorio y fino) */
+  --lg-a: 0.08;
+  --lg-a-hover: 0.12;
+  --lg-blur: 22px;
+
+  --lg-border-w: 1px;
+  --lg-border-a: 0.22;
+
+  --lg-radius: 22px;
+
+  /* sombra con “rim” interno (muy Apple) */
+  --lg-shadow:
+    0 18px 70px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30);
+
+  --lg-overlay-a: 0.16;
+}
+
+/* ==========================================================
+   TRUE LIQUID GLASS (Apple-feel)
+   - Refracción con SVG filter (sin afectar el texto)
+   - Blur + saturate/contrast
+   - Shine + grain
+   ========================================================== */
+
+/* Alias para que tu UI actual sí aplique el material */
+.tg-liquid,
+.liquid-glass,
+.liquid-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  border-radius: var(--lg-radius);
+  border: var(--lg-border-w) solid rgba(255, 255, 255, var(--lg-border-a));
+  box-shadow: var(--lg-shadow);
+
+  /* Importante: el fondo real vive en ::before */
+  background: transparent;
+
+  transform: translateZ(0);
+}
+
+/* La “lámina” de vidrio: aquí va blur + refracción */
+.tg-liquid::before,
+.liquid-glass::before,
+.liquid-surface::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  border-radius: inherit;
+
+  background: rgba(var(--lg-bg-rgb), var(--lg-a));
+
+  backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(112%);
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(112%);
+
+  /* La clave: distorsión */
+  filter: url(#tg-liquid-glass-distort);
+
+  /* Suaviza */
+  opacity: 1;
+  transform: translateZ(0);
+
+  transition: background var(--lg-dur) var(--lg-ease);
+}
+
+/* Brillos + overlay + “specular” + (opcional) grain */
+.tg-liquid::after,
+.liquid-glass::after,
+.liquid-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    radial-gradient(700px circle at var(--mx, 35%) var(--my, 20%),
+      rgba(255, 255, 255, 0.22),
+      transparent 55%),
+    radial-gradient(900px 520px at 20% 0%,
+      rgba(255, 255, 255, 0.10),
+      transparent 60%),
+    linear-gradient(135deg,
+      rgba(255, 255, 255, var(--lg-overlay-a)),
+      transparent 45%);
+
+  /* “Apple highlight” */
+  mix-blend-mode: screen;
+  opacity: 0.85;
+}
+
+/* Grain SOLO cuando agregas .tg-grain */
+.tg-grain::after {
+  background:
+    radial-gradient(700px circle at var(--mx, 35%) var(--my, 20%),
+      rgba(255, 255, 255, 0.22),
+      transparent 55%),
+    radial-gradient(900px 520px at 20% 0%,
+      rgba(255, 255, 255, 0.10),
+      transparent 60%),
+    linear-gradient(135deg,
+      rgba(255, 255, 255, var(--lg-overlay-a)),
+      transparent 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  background-size: auto, auto, auto, 220px 220px;
+  opacity: 0.10;
+  /* grain sutil */
+  mix-blend-mode: overlay;
+}
+
+/* Que el contenido quede arriba del material */
+.tg-liquid>*,
+.liquid-glass>*,
+.liquid-surface>* {
+  position: relative;
+  z-index: 1;
+}
+
+/* Interacción tipo Apple */
+.tg-interactive,
+.liquid-glass {
+  transition:
+    transform var(--lg-dur) var(--lg-ease),
+    box-shadow var(--lg-dur) var(--lg-ease),
+    border-color var(--lg-dur) var(--lg-ease);
+  cursor: pointer;
+}
+
+.tg-interactive:hover,
+.liquid-glass:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.tg-interactive:hover::before,
+.liquid-glass:hover::before {
+  background: rgba(var(--lg-bg-rgb), var(--lg-a-hover));
+}
+
+/* Surface (sin hover) */
+.liquid-surface {
+  cursor: default;
+}
+
+/* Fallback si no hay backdrop-filter */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+
+  .tg-liquid::before,
+  .liquid-glass::before,
+  .liquid-surface::before {
+    background: rgba(255, 255, 255, 0.10);
+    filter: none;
+  }
+}
