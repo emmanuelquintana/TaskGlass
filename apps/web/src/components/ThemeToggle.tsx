@@ -1,12 +1,12 @@
 import { Moon, Sun } from 'lucide-react'
-import { useTheme } from '../providers/ThemeProvider'
+import { useAppearance } from './providers/AppearanceProvider'
 
 export function ThemeToggle() {
-    const { theme, toggle } = useTheme()
+    const { theme, toggleTheme } = useAppearance()
 
     return (
         <button
-            onClick={toggle}
+            onClick={toggleTheme}
             className="tg-liquid tg-grain tg-interactive rounded-xl px-3 py-2 text-sm inline-flex items-center gap-2 hover:opacity-90 transition"
             type="button"
             aria-label="Toggle theme"

@@ -1,9 +1,19 @@
+import { useAppearance } from '../providers/AppearanceProvider';
 
 export function LiquidGlassDefs() {
+    const { intensity } = useAppearance();
+
+    // Map intensity (0.0 - 1.5) to filter parameters
+    // Default intensity 0.8 -> scale ~100, blur ~1.2
+    const scale = 120 * intensity;
+    const blur = 1.5 * intensity;
+
+    const scaleStrong = 160 * intensity;
+    const blurStrong = 2.0 * intensity;
+
     return (
         <svg width="0" height="0" style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
             <defs>
-                {/* Standard: sutil pero evidente */}
                 {/* Standard: sutil pero evidente */}
                 <filter
                     id="tg-liquid-glass-distort"
@@ -25,13 +35,13 @@ export function LiquidGlassDefs() {
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="120"
+                        scale={scale}
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
                     {/* suavizado fuerte para efecto de lente */}
-                    <feGaussianBlur stdDeviation="1.5" />
+                    <feGaussianBlur stdDeviation={blur} />
                 </filter>
 
                 {/* Strong: hover/active más “liquid” */}
@@ -54,12 +64,12 @@ export function LiquidGlassDefs() {
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale="160"
+                        scale={scaleStrong}
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    <feGaussianBlur stdDeviation="2.0" />
+                    <feGaussianBlur stdDeviation={blurStrong} />
                 </filter>
             </defs>
         </svg>

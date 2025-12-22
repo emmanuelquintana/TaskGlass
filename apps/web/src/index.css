@@ -88,10 +88,6 @@ body {
   height: 100%;
   z-index: -3;
   pointer-events: none;
-
-  /* Este blur fuerte + saturación es CLAVE para “luces” tipo iOS */
-  filter: blur(70px) saturate(150%) contrast(112%);
-  transform: scale(1.08);
   opacity: 1;
 }
 

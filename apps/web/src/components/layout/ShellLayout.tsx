@@ -1,17 +1,15 @@
 import { Outlet } from "react-router-dom";
 import { Topbar } from "./Topbar";
 import { Sidebar } from "./Sidebar";
-import { AnimatedBackdrop } from "../../shared/liquid/AnimatedBackdrop";
+import { AppBackground } from "../../shared/backgrounds/AppBackground";
 import { LiquidGlassLayer } from "../../shared/liquid/LiquidGlassLayer";
-import { LiquidGlassDefs } from "../ui/LiquidGlassDefs";
 
 export function ShellLayout() {
     return (
         <div className="h-full w-full">
-            {/* Fondo animado + vidrio WebGL */}
-            <AnimatedBackdrop fps={30} scale={0.6} />
+            {/* Fondo configurable + vidrio WebGL */}
+            <AppBackground />
             <LiquidGlassLayer />
-            <LiquidGlassDefs />
 
             {/* UI */}
             <div className="h-full w-full p-4 flex gap-4">
