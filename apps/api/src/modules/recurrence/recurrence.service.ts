@@ -29,7 +29,7 @@ type InsertCountRow = { count: number };
  */
 @Injectable()
 export class RecurrenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private mapTemplate(r: TemplateRow): RecurrenceTemplateModel {
     return {
@@ -87,33 +87,47 @@ export class RecurrenceService {
     const cadence = dto.cadence ?? 'daily';
     const isActive = dto.isActive ?? true;
 
-    const rows = await this.prisma.$queryRaw<TemplateRow[]>`
-      insert into tg_recurrence_template (
-        workspace_id, title, description, status_default, priority, cadence, is_active
-      )
-      values (
-        ${workspaceId}::uuid,
-        ${dto.title},
-        ${dto.description ?? null},
-        ${statusDefault}::tg_task_status,
-        ${priority}::smallint,
-        ${cadence},
-        ${isActive}
-      )
-      returning
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        title,
-        description,
-        status_default::text as "statusDefault",
-        priority::int as priority,
-        cadence,
-        is_active as "isActive",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
+    return this.prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<TemplateRow[]>`
+        insert into tg_recurrence_template (
+          workspace_id, title, description, status_default, priority, cadence, is_active
+        )
+        values (
+          ${workspaceId}::uuid,
+          ${dto.title},
+          ${dto.description ?? null},
+          ${statusDefault}::tg_task_status,
+          ${priority}::smallint,
+          ${cadence},
+          ${isActive}
+        )
+        returning
+          id::text as id,
+          workspace_id::text as "workspaceId",
+          title,
+          description,
+          status_default::text as "statusDefault",
+          priority::int as priority,
+          cadence,
+          is_active as "isActive",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `;
 
-    return this.mapTemplate(rows[0]);
+      const template = rows[0];
+
+      if (dto.tagIds?.length) {
+        for (const tagId of dto.tagIds) {
+          await tx.$executeRaw`
+            insert into tg_recurrence_template_tag (template_id, tag_id)
+            values (${template.id}::uuid, ${tagId}::uuid)
+            on conflict do nothing
+          `;
+        }
+      }
+
+      return this.mapTemplate(template);
+    });
   }
 
   async getTemplate(id: string): Promise<RecurrenceTemplateModel> {

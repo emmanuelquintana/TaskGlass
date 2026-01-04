@@ -1,5 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useParams } from 'react-router-dom'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import {
     DndContext,
     DragOverlay,
@@ -24,7 +26,7 @@ import {
     useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Search, Filter, Settings2, GripVertical, Check, Repeat } from 'lucide-react'
+import { Search, Filter, Pencil, GripVertical, Check, Repeat } from 'lucide-react'
 import { useBoard, useUpdateTask, useCreateTask, useUpdateTaskSortOrder, useUpdateColumnSortOrder } from '../api/board.api'
 import { TaskPreviewModal } from '../components/board/TaskPreviewModal'
 import { CreateTaskModal } from '../components/board/CreateTaskModal'
@@ -203,6 +205,9 @@ export function BoardPage() {
         statuses: filterStatuses.length > 0 ? filterStatuses : undefined,
         tagIds: filterTags.length > 0 ? filterTags : undefined
     })
+
+    // Recurrent Filter
+    const [filterRecurrentOnly, setFilterRecurrentOnly] = useState(false)
 
     console.log('useBoard state:', { isLoading, error, boardData: board })
 
@@ -456,7 +461,14 @@ export function BoardPage() {
                                 className={`p-2 rounded-xl transition-all border ${isLayoutMode ? 'bg-green-500/20 text-green-200 border-green-500/50' : 'bg-white/10 text-white border-white/10 hover:bg-white/20'}`}
                                 title={isLayoutMode ? "Save Layout" : "Edit Board Layout"}
                             >
-                                {isLayoutMode ? <Check className="w-4 h-4" /> : <Settings2 className="w-4 h-4" />}
+                                {isLayoutMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                            </button>
+                            <button
+                                onClick={() => setFilterRecurrentOnly(!filterRecurrentOnly)}
+                                className={`p-2 rounded-xl transition-all border ${filterRecurrentOnly ? 'bg-blue-500/20 text-blue-200 border-blue-500/50' : 'bg-white/10 text-white border-white/10 hover:bg-white/20'}`}
+                                title={filterRecurrentOnly ? "Showing Recurrent" : "Filter Recurrent"}
+                            >
+                                <Repeat className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -562,30 +574,39 @@ export function BoardPage() {
                 {!isLoading && board && (
                     <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
                         <div className="flex gap-4 overflow-x-auto pb-4 items-start" style={{ minWidth: '100%' }}>
-                            {columns.map((c) => (
-                                <SortableColumnItem key={c.id} column={c} isLayoutMode={isLayoutMode}>
-                                    <SortableContext items={c.tasks?.map((t: any) => t.id) || []} strategy={verticalListSortingStrategy}>
-                                        <DroppableColumnBody columnId={c.key}>{/* key is used for tasks droppable ID but maybe better to use c.id? Existing logic uses c.key 'todo' etc. Keep c.key */}
-                                            <div className="space-y-2 flex-1">
-                                                {c.tasks?.map((t: any) => (
-                                                    <SortableTaskItem key={t.id} task={t} onClick={(task) => setSelectedTask(task)} />
-                                                ))}
-                                                {(!c.tasks || c.tasks.length === 0) && (
-                                                    <div className="px-2 py-6 text-sm tg-muted text-center pointer-events-none opacity-50">Empty</div>
-                                                )}
-                                            </div>
-                                        </DroppableColumnBody>
-                                    </SortableContext>
-                                    {!isLayoutMode && (
-                                        <button
-                                            onClick={() => openCreateModal(c.key)}
-                                            className="w-full py-2.5 text-sm font-medium text-center text-white/40 border border-white/5 border-dashed rounded-2xl hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all duration-300 mt-2"
-                                        >
-                                            + Add
-                                        </button>
-                                    )}
-                                </SortableColumnItem>
-                            ))}
+                            {columns.map((c) => {
+                                const displayedTasks = c.tasks?.filter((t: any) => {
+                                    if (filterRecurrentOnly) return !!t.templateId
+                                    return true
+                                }) || []
+
+                                return (
+                                    <SortableColumnItem key={c.id} column={c} isLayoutMode={isLayoutMode}>
+                                        <SortableContext items={displayedTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
+                                            <DroppableColumnBody columnId={c.key}>
+                                                <div className="space-y-2 flex-1">
+                                                    {displayedTasks.map((t: any) => (
+                                                        <SortableTaskItem key={t.id} task={t} onClick={(task) => setSelectedTask(task)} />
+                                                    ))}
+                                                    {displayedTasks.length === 0 && (
+                                                        <div className="px-2 py-6 text-sm tg-muted text-center pointer-events-none opacity-50">
+                                                            {filterRecurrentOnly ? 'No recurrent tasks' : 'Empty'}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </DroppableColumnBody>
+                                        </SortableContext>
+                                        {!isLayoutMode && !filterRecurrentOnly && (
+                                            <button
+                                                onClick={() => openCreateModal(c.key)}
+                                                className="w-full py-2.5 text-sm font-medium text-center text-white/40 border border-white/5 border-dashed rounded-2xl hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all duration-300 mt-2"
+                                            >
+                                                + Add
+                                            </button>
+                                        )}
+                                    </SortableColumnItem>
+                                )
+                            })}
                         </div>
                     </SortableContext>
                 )}

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, IsArray, IsUUID } from 'class-validator';
 
 export class CreateRecurrenceTemplateDto {
   @ApiProperty({ example: 'Review invoices', maxLength: 160 })
