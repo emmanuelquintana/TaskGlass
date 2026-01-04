@@ -8,6 +8,7 @@ import { CreateTaskModal } from '../components/board/CreateTaskModal'
 import { TaskPreviewModal } from '../components/board/TaskPreviewModal'
 
 import { LiquidDateInput } from '../components/ui/LiquidDateInput'
+import { LiquidSelect } from '../components/ui/LiquidSelect'
 import { Search, Filter, Calendar } from 'lucide-react'
 
 function todayYYYYMMDD() {
@@ -22,7 +23,20 @@ export function BoardPage() {
     const { workspaceId } = useParams()
     const [runDate, setRunDate] = useState<string>(() => todayYYYYMMDD())
 
-    const { data: board, isLoading, error } = useBoard(workspaceId ?? '', { runDate })
+    const [filterQ, setFilterQ] = useState('')
+    const [filterPriorityMin, setFilterPriorityMin] = useState<number>(0)
+    const [filterStatuses, setFilterStatuses] = useState<string[]>([])
+    const [filterTags, setFilterTags] = useState<string[]>([])
+
+    // Debounce search ideally, but for now direct state is fine for low volume
+    const { data: board, isLoading, error } = useBoard(workspaceId ?? '', {
+        runDate,
+        q: filterQ,
+        priorityMin: filterPriorityMin > 0 ? filterPriorityMin : undefined,
+        statuses: filterStatuses.length > 0 ? filterStatuses : undefined,
+        tagIds: filterTags.length > 0 ? filterTags : undefined
+    })
+
     const createTask = useCreateTask(workspaceId ?? '')
     const updateTask = useUpdateTask(workspaceId ?? '')
     const updateSort = useUpdateTaskSortOrder(workspaceId ?? '')
@@ -32,6 +46,21 @@ export function BoardPage() {
     const [targetColumnForCreate, setTargetColumnForCreate] = useState<string>('todo')
 
     const columns = useMemo(() => board?.columns ?? [], [board])
+
+    // Extract unique tags from the current board data for the filter list
+    const availableTags = useMemo(() => {
+        const map = new Map<string, { id: string, name: string, color: string }>()
+        columns.forEach(c => {
+            c.tasks.forEach(t => {
+                t.tags?.forEach((tag: any) => {
+                    if (!map.has(tag.id)) {
+                        map.set(tag.id, tag)
+                    }
+                })
+            })
+        })
+        return Array.from(map.values())
+    }, [columns])
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -70,17 +99,7 @@ export function BoardPage() {
             return
         }
 
-        // Reordering in same column
-        // If dropping on the column container (empty space), overId might be column key/id
-        // In that case, we can assume moving to end, OR just ignore reorder if we can't determine index.
-        // But SortableContext generally handles item-over-item.
-        // If we dropped on "DroppableColumn", overId is column key.
-
         if (activeColumn.key === overColumn.key && overId === activeColumn.key) {
-            // Dropped on the column container itself (e.g. at the bottom)
-            // Move to end?
-            // Since we don't have indexes for "column container", we might skip reordering
-            // unless we want to move it to the very bottom.
             return
         }
 
@@ -107,10 +126,6 @@ export function BoardPage() {
         const overColumn = findColumn(overId)
 
         if (!activeColumn || !overColumn) return
-
-        if (activeColumn.key !== overColumn.key) {
-            // We could allow visual update here for smoother UX
-        }
     }
 
     const handleCreateTask = async (data: any) => {
@@ -198,6 +213,14 @@ export function BoardPage() {
         )
     }
 
+    // Toggle Helpers
+    const toggleStatus = (status: string) => {
+        setFilterStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])
+    }
+    const toggleTag = (tagId: string) => {
+        setFilterTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId])
+    }
+
     return (
         <DndContext
             sensors={sensors}
@@ -207,20 +230,117 @@ export function BoardPage() {
             onDragOver={handleDragOver}
         >
             <div className="space-y-4">
-                <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                        <div className="text-lg font-semibold">Board</div>
-                        <div className="text-sm tg-muted">workspaceId: {workspaceId}</div>
+                {/* Board Header & Filters */}
+                <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <div className="text-lg font-semibold">Board</div>
+                            <div className="text-sm tg-muted">workspace: {workspaceId}</div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm tg-muted">runDate</label>
+                            <div className="w-[180px]">
+                                <LiquidDateInput
+                                    value={runDate}
+                                    onChange={setRunDate}
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm tg-muted">runDate</label>
-                        <input
-                            value={runDate}
-                            onChange={(e) => setRunDate(e.target.value)}
-                            type="date"
-                            className="tg-liquid tg-grain tg-interactive rounded-xl px-3 py-2 text-sm outline-none"
-                        />
+                    {/* Filter Bar */}
+                    <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-white/5">
+
+                        {/* Search */}
+                        <div className="relative group w-full md:w-auto md:min-w-[200px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-white/80 transition-colors" />
+                            <input
+                                value={filterQ}
+                                onChange={e => setFilterQ(e.target.value)}
+                                placeholder="Search tasks..."
+                                className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-sm outline-none focus:bg-black/30 focus:border-white/10 transition-all placeholder:text-white/20"
+                            />
+                        </div>
+
+                        <div className="h-8 w-px bg-white/10 mx-1 hidden md:block" />
+
+                        {/* Priority */}
+                        <div className="w-[140px]">
+                            <LiquidSelect
+                                label=""
+                                placeholder="Priority"
+                                value={filterPriorityMin}
+                                onChange={(v) => setFilterPriorityMin(Number(v))}
+                                options={[
+                                    { label: 'All Priorities', value: 0 },
+                                    { label: 'High Only (P1)', value: 1, className: 'text-red-400' },
+                                    { label: 'Medium+ (P2+)', value: 2, className: 'text-yellow-400' },
+                                    { label: 'Low+ (P3+)', value: 3, className: 'text-blue-400' }
+                                ]}
+                            />
+                        </div>
+
+                        {/* Status Toggles */}
+                        <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
+                            {['todo', 'in_progress', 'blocked', 'done'].map(s => {
+                                const active = filterStatuses.includes(s)
+                                return (
+                                    <button
+                                        key={s}
+                                        onClick={() => toggleStatus(s)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${active ? 'bg-white/10 text-white shadow-lg' : 'text-white/40 hover:text-white/70'
+                                            }`}
+                                    >
+                                        {s.replace('_', ' ').toUpperCase()}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Tags Filter Row */}
+                    <div className="flex items-center justify-between pt-1 pb-1">
+                        {(availableTags.length > 0) && (
+                            <div className="flex items-center gap-2 overflow-x-auto tg-scrollbar flex-1 mr-4">
+                                <Filter className="w-3 h-3 text-white/30 flex-shrink-0" />
+                                {availableTags.map(tag => {
+                                    const active = filterTags.includes(tag.id)
+                                    return (
+                                        <button
+                                            key={tag.id}
+                                            onClick={() => toggleTag(tag.id)}
+                                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-all flex-shrink-0 whitespace-nowrap ${active
+                                                    ? 'brightness-125 shadow-md bg-white/5'
+                                                    : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'
+                                                }`}
+                                            style={{
+                                                backgroundColor: active ? `${tag.color || '#666'}30` : `${tag.color || '#666'}20`,
+                                                color: tag.color || '#666',
+                                                borderColor: active ? tag.color : 'transparent'
+                                            }}
+                                        >
+                                            #{tag.name}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        )}
+
+                        {(filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0) && (
+                            <button
+                                onClick={() => {
+                                    setFilterQ('')
+                                    setFilterPriorityMin(0)
+                                    setFilterStatuses([])
+                                    setFilterTags([])
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20 whitespace-nowrap ml-auto"
+                            >
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                                Clear Filters
+                            </button>
+                        )}
                     </div>
                 </div>
 

@@ -174,15 +174,28 @@ export class TaskService {
         const uniqueTags = [...new Set(dto.tagIds)];
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-        for (const tagValue of uniqueTags) {
-          let tagIdToLink = tagValue;
+        for (const rawTagValue of uniqueTags) {
+          let tagIdToLink = rawTagValue;
 
-          if (!uuidRegex.test(tagValue)) {
+          // Parse "Name:Color" or just "Name"
+          let tagName = rawTagValue;
+          let tagColor = '#6b7280';
+
+          if (rawTagValue.includes(':')) {
+            const parts = rawTagValue.split(':');
+            if (parts.length === 2) {
+              tagName = parts[0];
+              tagColor = parts[1];
+            }
+          }
+
+          // If standard UUID, we treat it as ID (ignoring color override for existing tags for now)
+          if (!uuidRegex.test(tagName)) {
             // It's a name, find or create
             // Check if exists
             const existing = await tx.$queryRaw<{ id: string }[]>`
                 select id from tg_tag 
-                where name = ${tagValue} 
+                where name = ${tagName} 
                   and workspace_id = ${workspaceId}::uuid
                 limit 1
             `;
@@ -195,29 +208,31 @@ export class TaskService {
                     insert into tg_tag (workspace_id, name, group_key, color)
                     values (
                         ${workspaceId}::uuid, 
-                        ${tagValue}, 
+                        ${tagName}, 
                         'general', 
-                        '#6b7280'
+                        ${tagColor}
                     )
                     on conflict (workspace_id, group_key, name) do update set updated_at = now()
                     returning id::text
                 `;
-              // If on conflict triggered and didn't return (some pg versions), we might need to fetch again. 
-              // But returning usually works with on conflict update.
-              // However, simpler to just insert. Assuming unique constraint on (workspace_id, name).
-              // If it failed to return, we query again.
+
               if (newTagRows[0]) {
                 tagIdToLink = newTagRows[0].id;
               } else {
                 const retry = await tx.$queryRaw<{ id: string }[]>`
                         select id from tg_tag 
-                        where name = ${tagValue} 
+                        where name = ${tagName} 
                           and workspace_id = ${workspaceId}::uuid
                         limit 1
                     `;
                 if (retry[0]) tagIdToLink = retry[0].id;
               }
             }
+          } else {
+            // It was a UUID, just verify/link it. 
+            // If they sent uuid:color, we essentially strip the color and link the uuid. 
+            // Changing color of existing tag by ID is not supported here.
+            tagIdToLink = tagName;
           }
 
           if (uuidRegex.test(tagIdToLink)) {

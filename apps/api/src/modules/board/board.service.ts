@@ -105,10 +105,14 @@ export class BoardService {
 
     // 3. Override/Merge with explicit Query Params (if provided)
     if (opts.q !== undefined) filters.q = opts.q;
-    if (opts.statuses !== undefined) filters.statuses = opts.statuses;
+    if (opts.statuses !== undefined) {
+      filters.statuses = Array.isArray(opts.statuses) ? opts.statuses : [opts.statuses];
+    }
     if (opts.priorityMin !== undefined) filters.priorityMin = opts.priorityMin;
     if (opts.priorityMax !== undefined) filters.priorityMax = opts.priorityMax;
-    if (opts.tagIds !== undefined) filters.tagIds = opts.tagIds;
+    if (opts.tagIds !== undefined) {
+      filters.tagIds = Array.isArray(opts.tagIds) ? opts.tagIds : [opts.tagIds];
+    }
 
     // 4. Extract final values for query
     const q = filters.q ?? '';

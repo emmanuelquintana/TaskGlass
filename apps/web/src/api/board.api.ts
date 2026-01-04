@@ -8,7 +8,9 @@ export type BoardFilters = {
     savedViewId?: string
     q?: string
     priorityMin?: number
+    priorityMax?: number
     statuses?: string[]
+    tagIds?: string[]
 }
 
 export function useBoard(workspaceId: string, opts: BoardFilters) {
@@ -21,7 +23,9 @@ export function useBoard(workspaceId: string, opts: BoardFilters) {
             if (opts.savedViewId) qs.set('savedViewId', opts.savedViewId)
             if (opts.q) qs.set('q', opts.q)
             if (opts.priorityMin) qs.set('priorityMin', opts.priorityMin.toString())
+            if (opts.priorityMax) qs.set('priorityMax', opts.priorityMax.toString())
             if (opts.statuses?.length) opts.statuses.forEach(s => qs.append('statuses', s))
+            if (opts.tagIds?.length) opts.tagIds.forEach(t => qs.append('tagIds', t)) // Assuming backend handles array params correctly (check generic NestJS array param handling, usually `key=val&key=val`)
 
             const url = `/v1/workspaces/${workspaceId}/board${qs.toString() ? `?${qs.toString()}` : ''}`
             const r = await apiGet<BoardResponse>(url)

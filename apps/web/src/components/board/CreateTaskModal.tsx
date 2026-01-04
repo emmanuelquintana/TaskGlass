@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { LiquidDateInput } from '../ui/LiquidDateInput'
+import { LiquidSelect } from '../ui/LiquidSelect'
+import { LiquidTagInput } from '../ui/LiquidTagInput'
 
 interface CreateTaskModalProps {
     isOpen: boolean
@@ -31,7 +33,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, initialStatus }: Cr
                 tagIds: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined, // Placeholder logic
                 status: initialStatus
             })
-            // Reset form
             setTitle('')
             setDescription('')
             setPriority(0)
@@ -76,16 +77,16 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, initialStatus }: Cr
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Priority</label>
-                        <select
+                        <LiquidSelect
                             value={priority}
-                            onChange={e => setPriority(Number(e.target.value))}
-                            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none focus:border-white/20 focus:bg-white/10 transition-all cursor-pointer appearance-none"
-                        >
-                            <option value="0" className="bg-[#1a1a1a]">None</option>
-                            <option value="1" className="bg-[#1a1a1a] text-red-400">High (P1)</option>
-                            <option value="2" className="bg-[#1a1a1a] text-yellow-400">Medium (P2)</option>
-                            <option value="3" className="bg-[#1a1a1a] text-blue-400">Low (P3)</option>
-                        </select>
+                            onChange={(val) => setPriority(Number(val))}
+                            options={[
+                                { label: 'None', value: 0 },
+                                { label: 'High (P1)', value: 1, className: 'text-red-400' },
+                                { label: 'Medium (P2)', value: 2, className: 'text-yellow-400' },
+                                { label: 'Low (P3)', value: 3, className: 'text-blue-400' },
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-1">
@@ -99,12 +100,11 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, initialStatus }: Cr
 
                 {/* Tags */}
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Tags</label>
-                    <input
+                    <LiquidTagInput
+                        label="Tags"
                         value={tags}
-                        onChange={e => setTags(e.target.value)}
-                        placeholder="e.g. frontend, bug, urgent (comma separated)"
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none focus:border-white/20 focus:bg-white/10 transition-all placeholder:text-white/20"
+                        onChange={setTags}
+                        placeholder="e.g. frontend, bug..."
                     />
                 </div>
 

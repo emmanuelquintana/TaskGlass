@@ -207,3 +207,22 @@ body::after {
 body::after {
   z-index: -2;
 }
+
+/* Custom Scrollbar */
+.tg-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.tg-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tg-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+
+.tg-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
