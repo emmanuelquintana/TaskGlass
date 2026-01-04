@@ -60,3 +60,14 @@ export async function apiPut<T>(path: string, body: unknown): Promise<ApiEnvelop
     if (!res.ok) throw new Error(`${json.code}: ${json.message} (traceId=${json.traceId})`)
     return json
 }
+
+export async function apiDelete<T>(path: string): Promise<ApiEnvelope<T>> {
+    const res = await fetch(`${API_BASE}${path}`, {
+        method: 'DELETE',
+        headers: { accept: 'application/json' },
+    })
+    const json = (await res.json()) as ApiEnvelope<T>
+    if (!res.ok) throw new Error(`${json.code}: ${json.message} (traceId=${json.traceId})`)
+    return json
+}
+

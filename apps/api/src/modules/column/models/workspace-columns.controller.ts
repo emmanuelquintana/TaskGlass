@@ -1,10 +1,11 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { ApiParam, ApiTags, ApiBody } from '@nestjs/swagger';
 import { ColumnService } from './column.service';
 import { ResponseCode } from 'src/common/decorators/response-code.decorator';
 import { ColumnModel } from './column.model';
 import { ApiOkResponseWrapped } from 'src/common/response/swagger-response.decorator';
 import { WorkspaceIdParamDto } from '../dto/workspace-id.param.dto';
+import { CreateColumnDto } from '../dto/create-column.dto';
 
 
 
@@ -19,5 +20,17 @@ export class WorkspaceColumnsController {
     @ApiOkResponseWrapped(ColumnModel)
     async list(@Param() p: WorkspaceIdParamDto): Promise<ColumnModel[]> {
         return this.columnService.listByWorkspace(p.workspaceId);
+    }
+
+    @Post()
+    @ApiParam({ name: 'workspaceId', example: '3f2c9a2e-7a1d-4b2f-9c2f-2a7f5b9d1c11' })
+    @ApiBody({ type: CreateColumnDto })
+    @ResponseCode('TG_COL_201')
+    @ApiOkResponseWrapped(ColumnModel)
+    async create(
+        @Param() p: WorkspaceIdParamDto,
+        @Body() dto: CreateColumnDto
+    ): Promise<ColumnModel> {
+        return this.columnService.create(p.workspaceId, dto);
     }
 }

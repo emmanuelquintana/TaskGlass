@@ -25,3 +25,5 @@ export type BoardResponse = {
     // tasks: BoardTask[] // Removed because tasks are now nested in columns
     savedView?: { id: string; name: string } | null
 }
+
+export type Board = BoardResponse

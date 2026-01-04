@@ -3,6 +3,7 @@ import { PrismaService } from 'src/common/prisma/prisma.service';
 import { WorkspaceNotFoundException } from 'src/modules/workspace/errors/workspace-not-found.exception';
 import { UpdateColumnSortOrderDto } from '../dto/update-column-sort-order.dto';
 import { UpdateColumnSortOrdersDto } from '../dto/update-column-sort-orders.dto';
+import { CreateColumnDto } from '../dto/create-column.dto';
 import { UpdateColumnTitleDto } from '../dto/update-column-title.dto';
 import { ColumnNotFoundException } from '../errors/column-not-found.exception';
 import { ColumnModel } from './column.model';
@@ -57,6 +58,62 @@ export class ColumnService {
     `;
 
         return rows.map((r) => this.mapRow(r));
+    }
+
+    async create(workspaceId: string, dto: CreateColumnDto): Promise<ColumnModel> {
+        // Ensure workspace exists
+        const ws = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+            select exists(select 1 from tg_workspace where id = ${workspaceId}::uuid and deleted_at is null) as "exists"
+        `;
+        if (!ws[0]?.exists) throw new WorkspaceNotFoundException();
+
+        // Validate key format for safety and consistency
+        if (!/^[a-z0-9_]+$/.test(dto.key)) {
+            throw new BadRequestException('Key must only contain lowercase alphanumeric characters and underscores');
+        }
+
+        // Add key to enum if not exists
+        // This is necessary because the column key column is typed as tg_task_status enum
+        try {
+            await this.prisma.$executeRawUnsafe(`ALTER TYPE tg_task_status ADD VALUE IF NOT EXISTS '${dto.key}'`);
+        } catch (error: any) {
+            // Ignore if it's just about the transaction block, though ideally we shouldn't be in one.
+            // Code 25001 means active_sql_transaction.
+            console.error('Failed to alter type:', error);
+        }
+
+        // Check if key already exists in workspace
+        const existingKey = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+            select exists(select 1 from tg_column where workspace_id = ${workspaceId}::uuid and key = ${dto.key}::tg_task_status) as "exists"
+        `;
+
+        if (existingKey[0]?.exists) {
+            throw new BadRequestException(`Column with key '${dto.key}' already exists in this workspace`);
+        }
+
+
+        // Determine sort order if not provided: max + 1
+        let sortOrder = dto.sortOrder;
+        if (sortOrder === undefined) {
+            const max = await this.prisma.$queryRaw<{ maxOrder: number }[]>`
+                select coalesce(max(sort_order), 0) as "maxOrder" from tg_column where workspace_id = ${workspaceId}::uuid
+             `;
+            sortOrder = (max[0]?.maxOrder ?? 0) + 1;
+        }
+
+        const rows = await this.prisma.$queryRaw<ColumnRow[]>`
+            insert into tg_column (workspace_id, key, title, sort_order)
+            values (${workspaceId}::uuid, ${dto.key}::tg_task_status, ${dto.title}, ${sortOrder})
+            returning
+                id::text as id,
+                workspace_id::text as "workspaceId",
+                "key"::text as "key",
+                title,
+                sort_order as "sortOrder"
+        `;
+
+        const created = rows[0];
+        return this.mapRow(created);
     }
 
     async updateTitle(id: string, dto: UpdateColumnTitleDto): Promise<ColumnModel> {

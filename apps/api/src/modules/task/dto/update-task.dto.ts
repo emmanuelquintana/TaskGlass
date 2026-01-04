@@ -12,12 +12,11 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   @MaxLength(2000)
-  @MaxLength(2000)
   description?: string;
 
   @ApiProperty({ example: 'todo', required: false })
   @IsOptional()
-  @IsIn(['todo', 'in_progress', 'blocked', 'done'])
+  @IsString()
   status?: string;
 
   @ApiProperty({ example: 1, required: false })

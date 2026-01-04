@@ -1,84 +1,124 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPatch, apiPost, apiPut } from '../lib/http'
-import type { BoardResponse } from '../types/board'
-import type { CreateTaskDto, UpdateTaskDto, BatchUpdateTaskSortOrderDto } from '../types/task'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPatch, apiPut, apiPost } from '../lib/http'
+import type { Board, BoardColumn, BoardTask } from '../types/board'
 
-export type BoardFilters = {
+export function useBoard(workspaceId: string, params?: {
     runDate?: string
     savedViewId?: string
     q?: string
+    statuses?: string[]
     priorityMin?: number
     priorityMax?: number
-    statuses?: string[]
     tagIds?: string[]
-}
-
-export function useBoard(workspaceId: string, opts: BoardFilters) {
+}) {
     return useQuery({
-        queryKey: ['board', workspaceId, opts],
-        enabled: Boolean(workspaceId),
+        queryKey: ['board', workspaceId, params],
         queryFn: async () => {
-            const qs = new URLSearchParams()
-            if (opts.runDate) qs.set('runDate', opts.runDate)
-            if (opts.savedViewId) qs.set('savedViewId', opts.savedViewId)
-            if (opts.q) qs.set('q', opts.q)
-            if (opts.priorityMin) qs.set('priorityMin', opts.priorityMin.toString())
-            if (opts.priorityMax) qs.set('priorityMax', opts.priorityMax.toString())
-            if (opts.statuses?.length) opts.statuses.forEach(s => qs.append('statuses', s))
-            if (opts.tagIds?.length) opts.tagIds.forEach(t => qs.append('tagIds', t)) // Assuming backend handles array params correctly (check generic NestJS array param handling, usually `key=val&key=val`)
+            // Build query string
+            const search = new URLSearchParams()
+            if (params?.runDate) search.set('runDate', params.runDate)
+            if (params?.savedViewId) search.set('savedViewId', params.savedViewId)
+            if (params?.q) search.set('q', params.q)
+            if (params?.statuses) params.statuses.forEach(s => search.append('statuses[]', s))
+            if (params?.priorityMin) search.set('priorityMin', params.priorityMin.toString())
+            if (params?.priorityMax) search.set('priorityMax', params.priorityMax.toString())
+            if (params?.tagIds) params.tagIds.forEach(t => search.append('tagIds[]', t))
 
-            const url = `/v1/workspaces/${workspaceId}/board${qs.toString() ? `?${qs.toString()}` : ''}`
-            const r = await apiGet<BoardResponse>(url)
+            const r = await apiGet<Board>(`/v1/workspaces/${workspaceId}/board?${search.toString()}`)
             return r.data
         },
+        enabled: !!workspaceId
     })
 }
+
 
 export function useCreateTask(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (dto: CreateTaskDto) => {
-            const r = await apiPost('/v1/tasks', { ...dto, workspaceId })
+        mutationFn: async (data: any) => {
+            const r = await apiPost<BoardTask>('/v1/tasks', data)
             return r.data
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
-        },
+        }
     })
 }
 
 export function useUpdateTask(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async ({ id, dto }: { id: string; dto: UpdateTaskDto }) => {
-            const r = await apiPatch(`/v1/tasks/${id}`, dto)
+        mutationFn: async (data: { id: string; dto: any }) => {
+            const r = await apiPatch<BoardTask>(`/v1/tasks/${data.id}`, data.dto)
             return r.data
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
-        },
+        }
     })
 }
 
 export function useUpdateTaskSortOrder(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (dto: BatchUpdateTaskSortOrderDto) => {
-            const r = await apiPut('/v1/tasks/sort-order', dto)
+        mutationFn: async (data: { workspaceId: string; items: { id: string; sortOrder: number }[] }) => {
+            // Assuming batch update for tasks sort order
+            const r = await apiPut<BoardTask[]>('/v1/tasks/sort-order', { items: data.items })
             return r.data
         },
         onSuccess: () => {
-            // Optimistic update often preferred, but simple invalidation for now
+            // Invalidate board to refresh order
             queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}
+
+
+export function useCreateColumn(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (data: { title: string; key: string }) => {
+            const r = await apiPost<BoardColumn>(`/v1/workspaces/${workspaceId}/columns`, data)
+            return r.data
         },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}
+
+export function useUpdateColumnTitle(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (data: { id: string; title: string }) => {
+            const r = await apiPatch<BoardColumn>(`/v1/columns/${data.id}`, { title: data.title })
+            return r.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
     })
 }
 
 export function useUpdateColumnSortOrder(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
+        mutationFn: async (data: { id: string; sortOrder: number }) => {
+            const r = await apiPatch<BoardColumn>(`/v1/columns/${data.id}/sort-order`, { sortOrder: data.sortOrder })
+            return r.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}
+
+export function useUpdateColumnSortOrdersBatch(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
         mutationFn: async (items: { id: string; sortOrder: number }[]) => {
-            await apiPut(`/v1/workspaces/${workspaceId}/board/columns/sort-order`, { items })
+            const r = await apiPut<BoardColumn[]>(`/v1/columns/sort-order`, { items })
+            return r.data
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })

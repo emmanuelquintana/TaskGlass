@@ -16,7 +16,7 @@ export class CreateTaskDto {
 
   @ApiProperty({ example: 'todo', required: false })
   @IsOptional()
-  @IsIn(['todo', 'doing', 'blocked', 'done'])
+  @IsString()
   status?: string;
 
   @ApiProperty({ example: '7e2f55f3-8d1c-4d0f-9a2b-20a3c4e5f6a7' })
