@@ -132,7 +132,8 @@ body::after {
   /* Fondo casi invisible para dejar ver el WebGL blur, 
      pero con un toque blanco para el "milky" effect */
   background: rgba(255, 255, 255, 0.01);
-  overflow: hidden;
+  /* overflow: hidden;  <-- Removed to allow hover scaling without clipping */
+  overflow: visible;
 
   transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
   transform: translateZ(0);

@@ -141,8 +141,9 @@ function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => v
     const handleMouseEnter = () => {
         if (!isDragging && innerRef.current) {
             gsap.to(innerRef.current, {
-                scale: 1.02,
+                scale: 1.05,
                 filter: 'brightness(1.1)',
+                zIndex: 50,
                 duration: 0.3,
                 ease: 'power2.out'
             })
@@ -154,6 +155,7 @@ function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => v
             gsap.to(innerRef.current, {
                 scale: 1,
                 filter: 'brightness(1)',
+                zIndex: 1,
                 duration: 0.3,
                 ease: 'power2.out'
             })
@@ -615,7 +617,7 @@ export function BoardPage() {
 
                 {!isLoading && board && (
                     <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
-                        <div className="flex gap-4 overflow-x-auto pb-4 items-start" style={{ minWidth: '100%' }}>
+                        <div className="flex gap-4 overflow-x-auto pb-4 pt-5 items-start" style={{ minWidth: '100%' }}>
                             {columns.map((c) => {
                                 const displayedTasks = c.tasks?.filter((t: any) => {
                                     if (filterRecurrentOnly) return !!t.templateId
