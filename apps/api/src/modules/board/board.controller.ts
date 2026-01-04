@@ -1,11 +1,12 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, Query, Put, Body } from '@nestjs/common';
+import { ApiParam, ApiTags, ApiBody } from '@nestjs/swagger';
 import { ResponseCode } from '../../common/decorators/response-code.decorator';
 import { ApiOkResponseWrapped } from '../../common/response/swagger-response.decorator';
 import { BoardService } from './board.service';
 import { BoardModel } from './models/board.model';
 import { BoardQueryDto } from './dto/board-query.dto';
 import { WorkspaceIdParamDto } from './dto/workspace-id.param.dto';
+import { UpdateColumnSortOrderDto } from './dto/update-column-sort.dto';
 
 @ApiTags('board')
 @Controller('workspaces')
@@ -18,5 +19,13 @@ export class BoardController {
     @ApiOkResponseWrapped(BoardModel)
     async getBoard(@Param() p: WorkspaceIdParamDto, @Query() q: BoardQueryDto): Promise<BoardModel> {
         return this.boardService.getBoard(p.workspaceId, q);
+    }
+
+    @Put(':workspaceId/board/columns/sort-order')
+    @ApiParam({ name: 'workspaceId' })
+    @ApiBody({ type: UpdateColumnSortOrderDto })
+    @ResponseCode('TG_BD_204')
+    async updateColumnSortOrder(@Param() p: WorkspaceIdParamDto, @Body() dto: UpdateColumnSortOrderDto): Promise<void> {
+        return this.boardService.updateColumnSortOrder(p.workspaceId, dto.items);
     }
 }

@@ -17,6 +17,8 @@ export class UpdateTaskDto {
 
   @ApiProperty({ example: 'todo', required: false })
   @IsOptional()
-  @IsIn(['todo', 'doing', 'blocked', 'done'])
+  @IsIn(['todo', 'in_progress', 'blocked', 'done'])
   status?: string;
 }
+
+// Updated status to support in_progress

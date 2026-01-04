@@ -73,3 +73,15 @@ export function useUpdateTaskSortOrder(workspaceId: string) {
         },
     })
 }
+
+export function useUpdateColumnSortOrder(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (items: { id: string; sortOrder: number }[]) => {
+            await apiPut(`/v1/workspaces/${workspaceId}/board/columns/sort-order`, { items })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}

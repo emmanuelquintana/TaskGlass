@@ -43,9 +43,14 @@ type SavedViewFilters = {
   tagIds?: string[];
   includeBacklog?: boolean;
 };
+import { RecurrenceService } from '../recurrence/recurrence.service';
+
 @Injectable()
 export class BoardService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly recurrenceService: RecurrenceService
+  ) { }
 
   private async assertWorkspaceExists(workspaceId: string): Promise<void> {
     const ws = await this.prisma.$queryRaw<{ exists: boolean }[]>`
@@ -94,6 +99,13 @@ export class BoardService {
   }): Promise<BoardModel> {
     await this.assertWorkspaceExists(workspaceId);
 
+    const runDate = opts.runDate;
+
+    // 0. Ensure Daily Run exists if runDate provided
+    if (runDate) {
+      await this.recurrenceService.runDaily(workspaceId, runDate);
+    }
+
     // 1. Start with Empty Filters
     let filters: SavedViewFilters = { includeBacklog: true, q: '' };
 
@@ -121,7 +133,6 @@ export class BoardService {
     const priorityMax = filters.priorityMax ?? null;
     const tagIds = filters.tagIds ?? null;
     const includeBacklog = filters.includeBacklog ?? true;
-    const runDate = opts.runDate;
 
     // Columns (igual que ya lo tienes)
     const columns = await this.prisma.$queryRaw<ColumnRow[]>`
@@ -261,6 +272,21 @@ export class BoardService {
       throw new (require('../saved-view/errors/saved-view-not-found.exception').SavedViewNotFoundException)();
     }
     return row;
+  }
+
+  async updateColumnSortOrder(workspaceId: string, items: { id: string; sortOrder: number }[]): Promise<void> {
+    await this.assertWorkspaceExists(workspaceId);
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        await tx.$executeRaw`
+          update tg_column
+          set sort_order = ${item.sortOrder}
+          where id = ${item.id}::uuid
+            and workspace_id = ${workspaceId}::uuid
+        `;
+      }
+    });
   }
 
 }

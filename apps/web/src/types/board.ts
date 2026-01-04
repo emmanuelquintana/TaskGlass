@@ -14,6 +14,7 @@ export type BoardTask = {
     priority?: number
     dueDate?: string
     sortOrder?: number
+    templateId?: string | null
     tags?: { id: string; name: string; color?: string }[]
 }
 

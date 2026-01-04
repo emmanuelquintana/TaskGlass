@@ -1,30 +1,197 @@
-import { useMemo, useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, PointerSensor, KeyboardSensor, useDroppable, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core'
-import { sortableKeyboardCoordinates, useSortable, SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    useDroppable
+} from '@dnd-kit/core'
+import type {
+    DragStartEvent,
+    DragEndEvent,
+    DragOverEvent
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    horizontalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useBoard, useCreateTask, useUpdateTask, useUpdateTaskSortOrder } from '../api/board.api'
-import { CreateTaskModal } from '../components/board/CreateTaskModal'
+import { Search, Filter, Settings2, GripVertical, Check, Repeat } from 'lucide-react'
+import { useBoard, useUpdateTask, useCreateTask, useUpdateTaskSortOrder, useUpdateColumnSortOrder } from '../api/board.api'
 import { TaskPreviewModal } from '../components/board/TaskPreviewModal'
-
-import { LiquidDateInput } from '../components/ui/LiquidDateInput'
+import { CreateTaskModal } from '../components/board/CreateTaskModal'
 import { LiquidSelect } from '../components/ui/LiquidSelect'
-import { Search, Filter, Calendar } from 'lucide-react'
+import { LiquidDateInput } from '../components/ui/LiquidDateInput'
+import { useCreateRecurrenceTemplate, useRunDaily } from '../api/recurrence.api'
 
-function todayYYYYMMDD() {
+// Helper for date
+const todayYYYYMMDD = () => {
     const d = new Date()
-    const yyyy = d.getFullYear()
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
+    return d.toISOString().split('T')[0]
 }
+
+// Draggable Column Component
+function SortableColumnItem({ column, children, isLayoutMode }: { column: any, children: React.ReactNode, isLayoutMode: boolean }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: column.id,
+        data: { type: 'COLUMN', column },
+        disabled: !isLayoutMode
+    })
+
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            // Use w-[300px] and flex-shrink-0 to prevent squeezing
+            className={`flex flex-col gap-4 rounded-3xl p-4 transition-all duration-300 w-[300px] flex-shrink-0
+                ${isLayoutMode ? 'border-2 border-purple-500/30' : 'border border-transparent'}
+                tg-liquid tg-grain tg-interactive hover:brightness-110 group/column`}
+        >
+            <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    {isLayoutMode && (
+                        <div {...attributes} {...listeners} className="cursor-grab hover:text-purple-400 text-white/20">
+                            <GripVertical className="w-5 h-5" />
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: column.color || '#fff' }} />
+                        <h3 className="font-semibold text-white/90">{column.title}</h3>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/40 font-mono">
+                            {column.tasks?.length || 0}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {children}
+        </div>
+    )
+}
+
+// Droppable Body for Tasks
+function DroppableColumnBody({ columnId, children }: { columnId: string, children: React.ReactNode }) {
+    const { setNodeRef } = useDroppable({
+        id: columnId,
+        data: { type: 'COLUMN_BODY', columnId }
+    })
+    return (
+        <div ref={setNodeRef} className="flex-1 flex flex-col min-h-[100px]">
+            {children}
+        </div>
+    )
+}
+
+// Sortable Task Component
+function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => void }) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: task.id,
+        data: { type: 'TASK', task }
+    })
+
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        transition,
+        opacity: isDragging ? 0 : 1
+    }
+
+    // Priority color helper
+    const getPriorityColor = (p: number) => {
+        if (p >= 10) return 'text-red-400'
+        if (p >= 5) return 'text-yellow-400'
+        return 'text-blue-400'
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            onClick={() => onClick(task)}
+            className="tg-liquid tg-grain tg-interactive rounded-2xl p-4 cursor-grab active:cursor-grabbing hover:translate-y-[-2px] transition-all group relative overflow-hidden"
+        >
+            {/* Task Content */}
+            <div className="space-y-3 relative z-10">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="font-medium text-sm leading-snug line-clamp-2 text-white/90">
+                        {task.title}
+                    </div>
+                </div>
+
+                {/* Meta Row */}
+                <div className="flex items-center justify-between text-[10px] text-white/40 font-medium">
+                    <div className="flex items-center gap-2">
+                        <span className={`${getPriorityColor(task.priority)} flex items-center gap-1`}>
+                            P{task.priority || 4}
+                        </span>
+                        {task.points && (
+                            <span className="bg-white/5 px-1.5 py-0.5 rounded ml-1 text-white/60">
+                                {task.points} pts
+                            </span>
+                        )}
+                        {task.templateId && <Repeat className="w-3 h-3 text-blue-300" />}
+                    </div>
+                </div>
+
+                {/* Tags */}
+                {task.tags && task.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                        {task.tags.map((tag: any) => (
+                            <span
+                                key={tag.id}
+                                className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold border"
+                                style={{
+                                    borderColor: tag.color || '#666',
+                                    color: tag.color || '#666',
+                                    backgroundColor: `${tag.color || '#666'}10`
+                                }}
+                            >
+                                {tag.name}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
 
 export function BoardPage() {
     const { workspaceId } = useParams()
-    const [runDate, setRunDate] = useState<string>(() => todayYYYYMMDD())
+    console.log('BoardPage Render:', { workspaceId })
 
+    const [runDate, setRunDate] = useState(todayYYYYMMDD())
     const [filterQ, setFilterQ] = useState('')
-    const [filterPriorityMin, setFilterPriorityMin] = useState<number>(0)
+    const [filterPriorityMin, setFilterPriorityMin] = useState(0)
     const [filterStatuses, setFilterStatuses] = useState<string[]>([])
     const [filterTags, setFilterTags] = useState<string[]>([])
 
@@ -37,25 +204,38 @@ export function BoardPage() {
         tagIds: filterTags.length > 0 ? filterTags : undefined
     })
 
+    console.log('useBoard state:', { isLoading, error, boardData: board })
+
     const createTask = useCreateTask(workspaceId ?? '')
     const updateTask = useUpdateTask(workspaceId ?? '')
     const updateSort = useUpdateTaskSortOrder(workspaceId ?? '')
+    const updateColumnSort = useUpdateColumnSortOrder(workspaceId ?? '')
 
     const [activeId, setActiveId] = useState<string | null>(null)
+    const [startColumnId, setStartColumnId] = useState<string | null>(null)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [targetColumnForCreate, setTargetColumnForCreate] = useState<string>('todo')
 
-    const columns = useMemo(() => board?.columns ?? [], [board])
+    // Layout Mode
+    const [isLayoutMode, setIsLayoutMode] = useState(false)
 
-    // Extract unique tags from the current board data for the filter list
+    // Local State for Optimistic UI
+    const [columns, setColumns] = useState<any[]>([])
+
+    // Sync board data to local state
+    useMemo(() => {
+        if (board?.columns) {
+            setColumns(board.columns)
+        }
+    }, [board])
+
+    // Extract unique tags
     const availableTags = useMemo(() => {
         const map = new Map<string, { id: string, name: string, color: string }>()
         columns.forEach(c => {
-            c.tasks.forEach(t => {
+            c.tasks?.forEach((t: any) => {
                 t.tags?.forEach((tag: any) => {
-                    if (!map.has(tag.id)) {
-                        map.set(tag.id, tag)
-                    }
+                    if (!map.has(tag.id)) map.set(tag.id, tag)
                 })
             })
         })
@@ -67,50 +247,71 @@ export function BoardPage() {
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
+    const findColumn = (id: string) => columns.find(c => c.tasks.some((t: any) => t.id === id) || c.id === id || c.key === id)
+
     const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event
         setActiveId(event.active.id as string)
+
+        const col = findColumn(active.id as string)
+        if (col) setStartColumnId(col.id)
     }
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const toggleLayoutMode = async () => {
+        if (isLayoutMode) {
+            // Saving
+            await updateColumnSort.mutateAsync(columns.map((c, i) => ({ id: c.id, sortOrder: i + 1 })))
+        }
+        setIsLayoutMode(!isLayoutMode)
+    }
+
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event
         setActiveId(null)
+        setStartColumnId(null)
 
         if (!over) return
 
         const activeId = active.id as string
         const overId = over.id as string
+        const activeType = active.data.current?.type
 
-        // Helper to find column and task
-        const findColumn = (id: string) => {
-            return columns.find(c => c.tasks.some(t => t.id === id) || c.id === id || c.key === id)
+        // --- COLUMN REORDERING ---
+        if (activeType === 'COLUMN') {
+            if (activeId !== overId) {
+                const oldIndex = columns.findIndex(c => c.id === activeId)
+                const newIndex = columns.findIndex(c => c.id === overId)
+                if (oldIndex !== -1 && newIndex !== -1) {
+                    const newCols = arrayMove(columns, oldIndex, newIndex)
+                    setColumns(newCols)
+                    // Save deferred to button click
+                }
+            }
+            return
         }
 
+        // --- TASK REORDERING / MOVING ---
         const activeColumn = findColumn(activeId)
         const overColumn = findColumn(overId)
 
         if (!activeColumn || !overColumn) return
 
-        // Moving between different columns
-        if (activeColumn.key !== overColumn.key) {
-            updateTask.mutate({
+        const activeColumnId = activeColumn.id
+        const activeColumnKey = activeColumn.key
+
+        // If moved to a different column (Status Change)
+        if (startColumnId && startColumnId !== activeColumnId) {
+            // Status Changed
+            await updateTask.mutateAsync({
                 id: activeId,
-                dto: { status: overColumn.key as any }
+                dto: { status: activeColumnKey }
             })
-            return
         }
 
-        if (activeColumn.key === overColumn.key && overId === activeColumn.key) {
-            return
-        }
-
-        const activeIndex = activeColumn.tasks.findIndex(t => t.id === activeId)
-        const overIndex = activeColumn.tasks.findIndex(t => t.id === overId)
-
-        if (activeIndex !== overIndex && activeIndex !== -1 && overIndex !== -1) {
-            const newTasks = arrayMove(activeColumn.tasks, activeIndex, overIndex)
-            // Call API to update sort order
-            const items = newTasks.map((t, i) => ({ id: t.id, sortOrder: i + 1 }))
-            updateSort.mutate({ workspaceId: workspaceId!, items })
+        // Sorting update
+        if (activeColumn) {
+            const items = activeColumn.tasks.map((t: any, i: number) => ({ id: t.id, sortOrder: i + 1 }))
+            await updateSort.mutateAsync({ workspaceId: workspaceId!, items })
         }
     }
 
@@ -120,12 +321,62 @@ export function BoardPage() {
 
         const activeId = active.id as string
         const overId = over.id as string
+        const activeType = active.data.current?.type
 
-        const findColumn = (id: string) => columns.find(c => c.tasks.some(t => t.id === id) || c.id === id || c.key === id)
+        if (activeType === 'COLUMN') return // Columns handled by SortableContext strategy
+
+        // Find columns
+        const findColumn = (id: string) => columns.find(c => c.tasks.some((t: any) => t.id === id) || c.id === id || c.key === id)
         const activeColumn = findColumn(activeId)
         const overColumn = findColumn(overId)
 
         if (!activeColumn || !overColumn) return
+
+        if (activeColumn.id !== overColumn.id) {
+            setColumns(prev => {
+                const activeColIndex = prev.findIndex(c => c.id === activeColumn.id)
+                const overColIndex = prev.findIndex(c => c.id === overColumn.id)
+
+                if (activeColIndex === -1 || overColIndex === -1) return prev
+
+                const activeTaskIndex = prev[activeColIndex].tasks.findIndex((t: any) => t.id === activeId)
+                if (activeTaskIndex === -1) return prev
+
+                const activeTask = prev[activeColIndex].tasks[activeTaskIndex]
+
+                // Clone
+                const newCols = [...prev]
+                const newActiveCol = { ...newCols[activeColIndex], tasks: [...newCols[activeColIndex].tasks] }
+                const newOverCol = { ...newCols[overColIndex], tasks: [...newCols[overColIndex].tasks] }
+
+                // Remove from active
+                newActiveCol.tasks.splice(activeTaskIndex, 1)
+
+                // Add to over
+                // If overId is the column itself, add to end (or 0)
+                const overTaskIndex = newOverCol.tasks.findIndex((t: any) => t.id === overId)
+
+                let newIndex
+                if (overTaskIndex >= 0) {
+                    // We are over a task
+                    const isBelowOverItem = over && active.rect.current.translated && active.rect.current.translated.top > over.rect.top + over.rect.height;
+                    const modifier = isBelowOverItem ? 1 : 0;
+                    newIndex = overTaskIndex >= 0 ? overTaskIndex + modifier : newOverCol.tasks.length + 1;
+                } else {
+                    // We are over the column container
+                    newIndex = newOverCol.tasks.length + 1
+                }
+
+                if (isNaN(newIndex)) newIndex = newOverCol.tasks.length
+
+                newOverCol.tasks.splice(newIndex, 0, activeTask) // Insert
+
+                newCols[activeColIndex] = newActiveCol
+                newCols[overColIndex] = newOverCol
+
+                return newCols
+            })
+        }
     }
 
     const handleCreateTask = async (data: any) => {
@@ -135,6 +386,29 @@ export function BoardPage() {
         })
     }
 
+    const { mutateAsync: createRecurrence } = useCreateRecurrenceTemplate(workspaceId ?? '')
+    const { mutateAsync: runDaily } = useRunDaily(workspaceId ?? '')
+
+    const handleCreateRecurrence = async (data: any) => {
+        console.log('Creating recurrence template...', data)
+        try {
+            await createRecurrence({
+                ...data,
+                // Map CreateTask fields to Recurrence DTO
+                cadence: 'daily',
+                isActive: true,
+                statusDefault: data.status
+            })
+            console.log('Recurrence template created. Triggering daily run for:', runDate)
+
+            // Force a run for the current view date so the new task appears immediately
+            await runDaily({ runDate })
+            console.log('Daily run triggered successfully.')
+        } catch (error) {
+            console.error('Error creating recurrence or triggering run:', error)
+        }
+    }
+
     const [selectedTask, setSelectedTask] = useState<any>(null)
 
     const openCreateModal = (columnKey: string) => {
@@ -142,76 +416,7 @@ export function BoardPage() {
         setIsCreateModalOpen(true)
     }
 
-    /* Column Droppable Wrapper */
-    const DroppableColumn = ({ column, children }: { column: any, children: React.ReactNode }) => {
-        const { setNodeRef } = useDroppable({ id: column.key })
-        return (
-            <div ref={setNodeRef} className="flex-1 flex flex-col min-h-[50px]">
-                {children}
-            </div>
-        )
-    }
 
-    /* Minimal UI for draggable item */
-    const SortableTask = ({ task, onClick }: { task: any, onClick: (task: any) => void }) => {
-        const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { task } })
-
-        const style = {
-            transform: CSS.Transform.toString(transform),
-            transition,
-            opacity: isDragging ? 0.3 : 1
-        }
-
-        return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                {...attributes}
-                {...listeners}
-                onClick={() => onClick(task)}
-                className="tg-liquid tg-grain tg-interactive rounded-2xl p-3 cursor-grab active:cursor-grabbing hover:scale-[1.02] transition-transform duration-200 group"
-            >
-                {/* Header & Tags */}
-                <div className="space-y-2">
-                    <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        {task.tags?.map((tag: any) => (
-                            <div
-                                key={tag.id}
-                                className="h-1.5 w-6 rounded-full"
-                                style={{ backgroundColor: tag.color || '#ffffff40' }}
-                                title={tag.name}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="text-sm font-semibold leading-snug">{task.title}</div>
-
-                    {task.description && (
-                        <div className="text-xs tg-muted line-clamp-2 leading-relaxed opacity-70">
-                            {task.description}
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-2 border-t border-white/5 mt-2">
-                        <div className="flex items-center gap-2 text-[11px] tg-muted">
-                            {task.priority > 0 && (
-                                <span className={`font-bold ${task.priority === 1 ? 'text-red-400' :
-                                    task.priority === 2 ? 'text-yellow-400' : 'text-blue-400'
-                                    }`}>
-                                    P{task.priority}
-                                </span>
-                            )}
-                            {task.dueDate && <span>{task.dueDate}</span>}
-                        </div>
-                        {/* Avatar placeholder or ID */}
-                        <div className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center text-[8px] font-bold">
-                            TG
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
 
     // Toggle Helpers
     const toggleStatus = (status: string) => {
@@ -246,6 +451,13 @@ export function BoardPage() {
                                     onChange={setRunDate}
                                 />
                             </div>
+                            <button
+                                onClick={toggleLayoutMode}
+                                className={`p-2 rounded-xl transition-all border ${isLayoutMode ? 'bg-green-500/20 text-green-200 border-green-500/50' : 'bg-white/10 text-white border-white/10 hover:bg-white/20'}`}
+                                title={isLayoutMode ? "Save Layout" : "Edit Board Layout"}
+                            >
+                                {isLayoutMode ? <Check className="w-4 h-4" /> : <Settings2 className="w-4 h-4" />}
+                            </button>
                         </div>
                     </div>
 
@@ -311,8 +523,8 @@ export function BoardPage() {
                                             key={tag.id}
                                             onClick={() => toggleTag(tag.id)}
                                             className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border transition-all flex-shrink-0 whitespace-nowrap ${active
-                                                    ? 'brightness-125 shadow-md bg-white/5'
-                                                    : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'
+                                                ? 'brightness-125 shadow-md bg-white/5'
+                                                : 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100'
                                                 }`}
                                             style={{
                                                 backgroundColor: active ? `${tag.color || '#666'}30` : `${tag.color || '#666'}20`,
@@ -348,38 +560,34 @@ export function BoardPage() {
                 {error && <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-6">Error cargando board</div>}
 
                 {!isLoading && board && (
-                    <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.max(columns.length, 1)}, minmax(240px, 1fr))` }}>
-                        {columns.map((c) => (
-                            <div key={c.key} className="flex flex-col gap-3">
-                                <section className="tg-liquid tg-grain tg-interactive rounded-3xl p-3 flex-1 flex flex-col">
-                                    <div className="flex items-baseline justify-between px-2 mb-3">
-                                        <div className="font-semibold">{c.title}</div>
-                                        <div className="text-xs tg-muted">{c.tasks.length}</div>
-                                    </div>
-
-                                    <SortableContext items={c.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                                        <DroppableColumn column={c}>
+                    <SortableContext items={columns.map(c => c.id)} strategy={horizontalListSortingStrategy}>
+                        <div className="flex gap-4 overflow-x-auto pb-4 items-start" style={{ minWidth: '100%' }}>
+                            {columns.map((c) => (
+                                <SortableColumnItem key={c.id} column={c} isLayoutMode={isLayoutMode}>
+                                    <SortableContext items={c.tasks?.map((t: any) => t.id) || []} strategy={verticalListSortingStrategy}>
+                                        <DroppableColumnBody columnId={c.key}>{/* key is used for tasks droppable ID but maybe better to use c.id? Existing logic uses c.key 'todo' etc. Keep c.key */}
                                             <div className="space-y-2 flex-1">
-                                                {c.tasks.map((t) => (
-                                                    <SortableTask key={t.id} task={t} onClick={(task) => setSelectedTask(task)} />
+                                                {c.tasks?.map((t: any) => (
+                                                    <SortableTaskItem key={t.id} task={t} onClick={(task) => setSelectedTask(task)} />
                                                 ))}
-                                                {c.tasks.length === 0 && (
-                                                    <div className="px-2 py-6 text-sm tg-muted text-center pointer-events-none">Sin tareas</div>
+                                                {(!c.tasks || c.tasks.length === 0) && (
+                                                    <div className="px-2 py-6 text-sm tg-muted text-center pointer-events-none opacity-50">Empty</div>
                                                 )}
                                             </div>
-                                        </DroppableColumn>
+                                        </DroppableColumnBody>
                                     </SortableContext>
-                                </section>
-
-                                <button
-                                    onClick={() => openCreateModal(c.key)}
-                                    className="w-full py-2.5 text-sm font-medium text-center text-white/40 border border-white/5 border-dashed rounded-2xl hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all duration-300"
-                                >
-                                    + Add Task
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                                    {!isLayoutMode && (
+                                        <button
+                                            onClick={() => openCreateModal(c.key)}
+                                            className="w-full py-2.5 text-sm font-medium text-center text-white/40 border border-white/5 border-dashed rounded-2xl hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all duration-300 mt-2"
+                                        >
+                                            + Add
+                                        </button>
+                                    )}
+                                </SortableColumnItem>
+                            ))}
+                        </div>
+                    </SortableContext>
                 )}
 
                 <DragOverlay>
@@ -400,6 +608,7 @@ export function BoardPage() {
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     onSubmit={handleCreateTask}
+                    onRecurrenceSubmit={handleCreateRecurrence}
                     initialStatus={targetColumnForCreate}
                 />
             </div>
