@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 export type Theme = 'light' | 'dark'
-export type BgMode = 'liquid' | 'geometric' | 'mesh'
+export type BgMode = 'liquid' | 'geometric' | 'mesh' | 'aurora' | 'cyber' | 'zen' | 'minimalist' | 'orbit' | 'cosmos' | 'sunset' | 'frost' | 'lava'
 
 type AppearanceContextValue = {
     theme: Theme

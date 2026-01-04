@@ -30,11 +30,11 @@ export function GeometricBackdrop() {
             ctx.clearRect(0, 0, w, h);
 
             // Base Background
-            ctx.fillStyle = isLight ? "#f8fafc" : "#050813";
+            ctx.fillStyle = isLight ? "#f1f5f9" : "#050813";
             ctx.fillRect(0, 0, w, h);
 
             // Set styles
-            const strokeColor = isLight ? "rgba(71, 85, 105, 0.15)" : "rgba(255,255,255,0.08)";
+            const strokeColor = isLight ? "rgba(37, 99, 235, 0.12)" : "rgba(255,255,255,0.08)";
 
             ctx.lineWidth = 2;
             ctx.strokeStyle = strokeColor;
