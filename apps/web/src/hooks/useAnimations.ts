@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 
@@ -43,7 +43,7 @@ interface StaggerOptions {
     selector?: string
     delay?: number
     stagger?: number
-    dependencies?: any[]
+    dependencies?: unknown[]
 }
 
 export function useStaggerList(ref: React.RefObject<HTMLElement | null>, optionsOrSelector?: string | StaggerOptions) {
@@ -64,14 +64,12 @@ export function useStaggerList(ref: React.RefObject<HTMLElement | null>, options
             stagger = optionsOrSelector.stagger || 0.05
         }
 
-        // Handle direct children selector safely
         const targets = selector === '> *'
             ? Array.from(ref.current.children)
             : ref.current.querySelectorAll(selector)
 
         if (!targets || targets.length === 0) return
 
-        // Reset opacity before animating to ensure they are hidden if re-running
         gsap.set(targets, { opacity: 0, y: 20 })
 
         gsap.fromTo(targets,

@@ -6,6 +6,12 @@ export type BoardColumn = {
     tasks: BoardTask[]
 }
 
+export type BoardTag = {
+    id: string
+    name: string
+    color?: string | null
+}
+
 export type BoardTask = {
     id: string
     title: string
@@ -15,7 +21,7 @@ export type BoardTask = {
     dueDate?: string
     sortOrder?: number
     templateId?: string | null
-    tags?: { id: string; name: string; color?: string }[]
+    tags?: BoardTag[]
 }
 
 export type BoardResponse = {

@@ -24,7 +24,7 @@ type TaskRow = {
   sortOrder: number;
   templateId: string | null;
   createdAt: Date | null;
-  tags: any;
+  tags: BoardTagModel[];
 };
 
 
@@ -59,9 +59,9 @@ export class BoardService {
     if (!ws[0]?.exists) throw new WorkspaceNotFoundException();
   }
 
-  private normalizeTags(tags: any): BoardTagModel[] {
+  private normalizeTags(tags: unknown): BoardTagModel[] {
     if (Array.isArray(tags)) return tags as BoardTagModel[];
-    if (tags && typeof tags === 'object' && Array.isArray(tags?.value)) return tags.value as BoardTagModel[];
+    if (tags && typeof tags === 'object' && Array.isArray((tags as any)?.value)) return (tags as any).value as BoardTagModel[];
     return [];
   }
 
@@ -134,7 +134,6 @@ export class BoardService {
     const tagIds = filters.tagIds ?? null;
     const includeBacklog = filters.includeBacklog ?? true;
 
-    // Columns (igual que ya lo tienes)
     const columns = await this.prisma.$queryRaw<ColumnRow[]>`
     select
       id::text as id,

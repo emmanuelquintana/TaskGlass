@@ -5,7 +5,9 @@ import { useRef } from 'react'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 
-export function TaskCard({ task, onClick, isOverlay }: { task: any, onClick?: (t: any) => void, isOverlay?: boolean }) {
+import type { BoardTask, BoardTag } from '../../types/board'
+
+export function TaskCard({ task, onClick, isOverlay }: { task: BoardTask, onClick?: (t: BoardTask) => void, isOverlay?: boolean }) {
     const {
         attributes,
         listeners,
@@ -63,7 +65,6 @@ export function TaskCard({ task, onClick, isOverlay }: { task: any, onClick?: (t
         }
     }
 
-    // Priority color helper
     const getPriorityColor = (p: number) => {
         if (p >= 10) return 'text-red-400'
         if (p >= 5) return 'text-yellow-400'
@@ -97,7 +98,6 @@ export function TaskCard({ task, onClick, isOverlay }: { task: any, onClick?: (t
                     onMouseLeave={handleMouseLeave}
                     className="tg-liquid tg-grain tg-interactive rounded-xl p-3 border border-white/5 cursor-grab active:cursor-grabbing relative overflow-hidden"
                 >
-                    {/* Task Content */}
                     <div className="space-y-3 relative z-10">
                         <div className="flex items-start justify-between gap-3">
                             <div className="font-medium text-sm leading-snug line-clamp-2 text-white/90">
@@ -105,25 +105,23 @@ export function TaskCard({ task, onClick, isOverlay }: { task: any, onClick?: (t
                             </div>
                         </div>
 
-                        {/* Meta Row */}
                         <div className="flex items-center justify-between text-[10px] text-white/40 font-medium">
                             <div className="flex items-center gap-2">
-                                <span className={`${getPriorityColor(task.priority)} flex items-center gap-1`}>
+                                <span className={`${getPriorityColor(task.priority || 4)} flex items-center gap-1`}>
                                     P{task.priority || 4}
                                 </span>
-                                {task.points && (
+                                {(task as any).points && (
                                     <span className="bg-white/5 px-1.5 py-0.5 rounded ml-1 text-white/60">
-                                        {task.points} pts
+                                        {(task as any).points} pts
                                     </span>
                                 )}
                                 {task.templateId && <Repeat className="w-3 h-3 text-blue-300" />}
                             </div>
                         </div>
 
-                        {/* Tags */}
                         {task.tags && task.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-1">
-                                {task.tags.map((tag: any) => (
+                                {task.tags.map((tag: BoardTag) => (
                                     <span
                                         key={tag.id}
                                         className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold border"

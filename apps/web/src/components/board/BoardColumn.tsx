@@ -6,8 +6,9 @@ import { GripVertical, Trash2, XCircle } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { useDeleteTasksByFilter, useDeleteColumn } from '../../api/board.api'
 
-// Draggable Column Component
-export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, onAddTask }: { column: any, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: any[], isOverlay?: boolean, onAddTask?: () => void }) {
+import type { BoardColumn as IBoardColumn, BoardTask } from '../../types/board'
+
+export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, onAddTask }: { column: IBoardColumn, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: BoardTask[], isOverlay?: boolean, onAddTask?: () => void }) {
     const {
         attributes,
         listeners,
@@ -25,7 +26,6 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
     const deleteTasks = useDeleteTasksByFilter(workspaceId ?? '')
     const deleteColumn = useDeleteColumn(workspaceId ?? '')
 
-    // State for confirmation modals
     const [isClearModalOpen, setIsClearModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
@@ -62,14 +62,13 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
             >
                 <div className="flex items-center justify-between pb-2 border-b border-white/5">
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: column.color || '#fff' }} />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: (column as any).color || '#fff' }} />
                         <h3 className="font-semibold text-white/90">{column.title}</h3>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/40 font-mono">
                             {tasks?.length || 0}
                         </span>
                     </div>
                 </div>
-                {/* Body Preview (Empty or some placeholder) */}
                 <div className="flex-1 min-h-[100px] bg-white/5 rounded-2xl" />
             </div>
         )
@@ -80,7 +79,6 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
             <div
                 ref={setNodeRef}
                 style={style}
-                // Use w-[300px] and flex-shrink-0 to prevent squeezing
                 className={`flex flex-col gap-4 rounded-3xl p-4 transition-all duration-300 w-[300px] flex-shrink-0
                 ${isLayoutMode ? 'border-2 border-purple-500/30 bg-purple-500/5' : 'border border-transparent'}
                 tg-liquid tg-grain tg-interactive hover:brightness-110 group/column`}
@@ -93,7 +91,7 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
                             </div>
                         )}
                         <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: column.color || '#fff' }} />
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: (column as any).color || '#fff' }} />
                             <h3 className="font-semibold text-white/90">{column.title}</h3>
                             <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/40 font-mono">
                                 {tasks?.length || 0}

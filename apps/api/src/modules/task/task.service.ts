@@ -11,6 +11,8 @@ import { BatchUpdateTaskSortOrderDto } from './dto/batch-update-task-sort-order.
 import { BatchUpdateTaskSortOrderResultModel } from './models/batch-update-task-sort-order-result.model';
 import { TaskSortOrderUpdateModel } from './models/task-sort-order-update.model';
 
+import { TagModel } from '../tag/models/tag.model';
+
 type TaskRow = {
   id: string;
   workspaceId: string;
@@ -23,7 +25,7 @@ type TaskRow = {
   templateId: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
-  tags: any; // JSON
+  tags: TagModel[];
 };
 /**
  * TaskService provides CRUD operations for tg_task.
@@ -192,8 +194,7 @@ export class TaskService {
         `;
       const newTask = rows[0];
 
-      // 2. Insert Tags if Present
-      const insertedTags: any[] = [];
+      const insertedTags: TagModel[] = [];
       if (dto.tagIds && dto.tagIds.length > 0) {
         const uniqueTags = [...new Set(dto.tagIds)];
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -201,7 +202,6 @@ export class TaskService {
         for (const rawTagValue of uniqueTags) {
           let tagIdToLink = rawTagValue;
 
-          // Parse "Name:Color" or just "Name"
           let tagName = rawTagValue;
           let tagColor = '#6b7280';
 
@@ -213,11 +213,8 @@ export class TaskService {
             }
           }
 
-          // If standard UUID, we treat it as ID (ignoring color override for existing tags for now)
           if (!uuidRegex.test(tagName)) {
-            // It's a name, find or create
-            // Check if exists
-            const existing = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
+            const existing = await tx.$queryRaw<TagModel[]>`
                 select id, name, color from tg_tag 
                 where name = ${tagName} 
                   and workspace_id = ${workspaceId}::uuid
@@ -228,8 +225,7 @@ export class TaskService {
               tagIdToLink = existing[0].id;
               insertedTags.push(existing[0]);
             } else {
-              // Create new tag
-              const newTagRows = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
+              const newTagRows = await tx.$queryRaw<TagModel[]>`
                     insert into tg_tag (workspace_id, name, group_key, color)
                     values (
                         ${workspaceId}::uuid, 
@@ -245,7 +241,7 @@ export class TaskService {
                 tagIdToLink = newTagRows[0].id;
                 insertedTags.push(newTagRows[0]);
               } else {
-                const retry = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
+                const retry = await tx.$queryRaw<TagModel[]>`
                         select id, name, color from tg_tag 
                         where name = ${tagName} 
                           and workspace_id = ${workspaceId}::uuid
@@ -258,9 +254,7 @@ export class TaskService {
               }
             }
           } else {
-            // It was a UUID, just verify/link it. 
             tagIdToLink = tagName;
-            // We can't easily push to insertedTags without fetching, but we'll assume it exists
           }
 
           if (uuidRegex.test(tagIdToLink)) {

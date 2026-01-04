@@ -39,6 +39,6 @@ export class CreateRecurrenceTemplateDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   tagIds?: string[];
 }

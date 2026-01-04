@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { BoardTask } from '../../types/board'
 import { Modal } from '../ui/Modal'
 import { LiquidDateInput } from '../ui/LiquidDateInput'
 import { LiquidSelect } from '../ui/LiquidSelect'
@@ -10,7 +11,7 @@ import { LiquidButton } from '../ui/LiquidButton'
 interface CreateTaskModalProps {
     isOpen: boolean
     onClose: () => void
-    onSubmit: (data: any) => Promise<void>
+    onSubmit: (data: Partial<BoardTask>) => Promise<void>
     onRecurrenceSubmit: (data: any) => Promise<void>
     initialStatus: string
 }
@@ -22,12 +23,10 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
     const [dueDate, setDueDate] = useState('')
     const [tags, setTags] = useState('')
 
-    // Recurrence State
     const [isRecurrent, setIsRecurrent] = useState(false)
 
     const [isLoading, setIsLoading] = useState(false)
 
-    // Animation Ref - Use state to trigger effect when element mounts
     const [formEl, setFormEl] = useState<HTMLFormElement | null>(null)
     const formRef = { current: formEl }
 
@@ -49,7 +48,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
             if (isRecurrent) {
                 await onRecurrenceSubmit({
                     ...commonData,
-                    // Recurrence specific
                     cadence: 'daily',
                     tagIds: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
                 })
@@ -58,10 +56,9 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     ...commonData,
                     dueDate: dueDate || undefined,
                     tagIds: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-                })
+                } as any)
             }
 
-            // Reset forms
             setTitle('')
             setDescription('')
             setPriority(0)
@@ -80,7 +77,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
         <Modal isOpen={isOpen} onClose={onClose} title={isRecurrent ? "Create Daily Routine" : "Create New Task"}>
             <form onSubmit={handleSubmit} className="space-y-4" ref={setFormEl}>
 
-                {/* Header Toggle for Recurrence */}
                 <div className="flex items-center justify-end mb-2">
                     <button
                         type="button"
@@ -95,7 +91,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     </button>
                 </div>
 
-                {/* Title */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Title</label>
                     <input
@@ -107,7 +102,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     />
                 </div>
 
-                {/* Description */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Description</label>
                     <textarea
@@ -119,7 +113,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     />
                 </div>
 
-                {/* Row: Priority & Due Date/Cadence */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Priority</label>
@@ -168,7 +161,6 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     </div>
                 )}
 
-                {/* Footer Buttons */}
                 <div className="flex justify-end gap-3 pt-4">
                     <LiquidButton
                         type="button"

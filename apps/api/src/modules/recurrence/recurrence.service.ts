@@ -7,6 +7,7 @@ import { UpdateRecurrenceTemplateDto } from './dto/update-template.dto';
 import { SetTemplateActiveDto } from './dto/set-template-active.dto';
 import { RecurrenceTemplateModel } from './models/recurrence-template.model';
 import { DailyRunResultModel } from './models/daily-run-result.model';
+import { TagModel } from '../tag/models/tag.model';
 
 type TemplateRow = {
   id: string;
@@ -19,6 +20,7 @@ type TemplateRow = {
   isActive: boolean;
   createdAt: Date | null;
   updatedAt: Date | null;
+  tags: TagModel[];
 };
 
 type InsertCountRow = { count: number };
@@ -42,7 +44,8 @@ export class RecurrenceService {
       cadence: r.cadence,
       isActive: r.isActive,
       createdAt: r.createdAt ? r.createdAt.toISOString() : undefined,
-      updatedAt: r.updatedAt ? r.updatedAt.toISOString() : undefined
+      updatedAt: r.updatedAt ? r.updatedAt.toISOString() : undefined,
+      tags: r.tags || []
     };
   }
 
@@ -61,19 +64,28 @@ export class RecurrenceService {
 
     const rows = await this.prisma.$queryRaw<TemplateRow[]>`
       select
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        title,
-        description,
-        status_default::text as "statusDefault",
-        priority::int as priority,
-        cadence,
-        is_active as "isActive",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      from tg_recurrence_template
-      where workspace_id = ${workspaceId}::uuid
-      order by is_active desc, updated_at desc
+        t.id::text as id,
+        t.workspace_id::text as "workspaceId",
+        t.title,
+        t.description,
+        t.status_default::text as "statusDefault",
+        t.priority::int as priority,
+        t.cadence,
+        t.is_active as "isActive",
+        t.created_at as "createdAt",
+        t.updated_at as "updatedAt",
+        coalesce(
+            (
+                select json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+                from tg_recurrence_template_tag tt
+                join tg_tag tg on tg.id = tt.tag_id
+                where tt.template_id = t.id
+            ),
+            '[]'::json
+        ) as tags
+      from tg_recurrence_template t
+      where t.workspace_id = ${workspaceId}::uuid
+      order by t.is_active desc, t.updated_at desc
     `;
 
     return rows.map((r) => this.mapTemplate(r));
@@ -111,20 +123,84 @@ export class RecurrenceService {
           cadence,
           is_active as "isActive",
           created_at as "createdAt",
-          updated_at as "updatedAt"
+          updated_at as "updatedAt",
+          '[]'::json as tags
       `;
 
       const template = rows[0];
 
+      const insertedTags: TagModel[] = [];
       if (dto.tagIds?.length) {
-        for (const tagId of dto.tagIds) {
-          await tx.$executeRaw`
-            insert into tg_recurrence_template_tag (template_id, tag_id)
-            values (${template.id}::uuid, ${tagId}::uuid)
-            on conflict do nothing
-          `;
+        const uniqueTags = [...new Set(dto.tagIds)];
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        for (const rawTagValue of uniqueTags) {
+          let tagIdToLink = rawTagValue;
+          let tagName = rawTagValue;
+          let tagColor = '#6b7280';
+
+          if (rawTagValue.includes(':')) {
+            const parts = rawTagValue.split(':');
+            if (parts.length === 2) {
+              tagName = parts[0];
+              tagColor = parts[1];
+            }
+          }
+
+          if (!uuidRegex.test(tagName)) {
+            const existing = await tx.$queryRaw<TagModel[]>`
+                select id, name, color from tg_tag 
+                where name = ${tagName} 
+                  and workspace_id = ${workspaceId}::uuid
+                limit 1
+            `;
+
+            if (existing[0]) {
+              tagIdToLink = existing[0].id;
+              insertedTags.push(existing[0]);
+            } else {
+              const newTagRows = await tx.$queryRaw<TagModel[]>`
+                    insert into tg_tag (workspace_id, name, group_key, color)
+                    values (
+                        ${workspaceId}::uuid, 
+                        ${tagName}, 
+                        'general', 
+                        ${tagColor}
+                    )
+                    on conflict (workspace_id, group_key, name) do update set updated_at = now()
+                    returning id::text, name, color
+                `;
+
+              if (newTagRows[0]) {
+                tagIdToLink = newTagRows[0].id;
+                insertedTags.push(newTagRows[0]);
+              } else {
+                const retry = await tx.$queryRaw<TagModel[]>`
+                        select id, name, color from tg_tag 
+                        where name = ${tagName} 
+                          and workspace_id = ${workspaceId}::uuid
+                        limit 1
+                    `;
+                if (retry[0]) {
+                  tagIdToLink = retry[0].id;
+                  insertedTags.push(retry[0]);
+                }
+              }
+            }
+          } else {
+            tagIdToLink = tagName;
+          }
+
+          if (uuidRegex.test(tagIdToLink)) {
+            await tx.$executeRaw`
+                insert into tg_recurrence_template_tag (template_id, tag_id)
+                values (${template.id}::uuid, ${tagIdToLink}::uuid)
+                on conflict do nothing
+             `;
+          }
         }
       }
+      template.tags = insertedTags;
 
       return this.mapTemplate(template);
     });
@@ -133,18 +209,27 @@ export class RecurrenceService {
   async getTemplate(id: string): Promise<RecurrenceTemplateModel> {
     const rows = await this.prisma.$queryRaw<TemplateRow[]>`
       select
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        title,
-        description,
-        status_default::text as "statusDefault",
-        priority::int as priority,
-        cadence,
-        is_active as "isActive",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      from tg_recurrence_template
-      where id = ${id}::uuid
+        t.id::text as id,
+        t.workspace_id::text as "workspaceId",
+        t.title,
+        t.description,
+        t.status_default::text as "statusDefault",
+        t.priority::int as priority,
+        t.cadence,
+        t.is_active as "isActive",
+        t.created_at as "createdAt",
+        t.updated_at as "updatedAt",
+        coalesce(
+            (
+                select json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+                from tg_recurrence_template_tag tt
+                join tg_tag tg on tg.id = tt.tag_id
+                where tt.template_id = t.id
+            ),
+            '[]'::json
+        ) as tags
+      from tg_recurrence_template t
+      where t.id = ${id}::uuid
       limit 1
     `;
 

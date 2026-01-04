@@ -22,6 +22,7 @@ import {
     verticalListSortingStrategy
 } from '@dnd-kit/sortable'
 import { Search, Filter, Pencil, Check, Repeat, Plus, X } from 'lucide-react'
+import type { BoardColumn as IBoardColumn, BoardTask, BoardTag } from '../types/board'
 import {
     useBoard,
     useCreateTask,
@@ -39,22 +40,18 @@ import { useCreateRecurrenceTemplate, useRunDaily } from '../api/recurrence.api'
 import { BoardColumn } from '../components/board/BoardColumn'
 import { TaskCard } from '../components/board/TaskCard'
 import { DroppableColumnBody } from '../components/board/DroppableColumnBody'
-// Helper for date
 const todayYYYYMMDD = () => {
     const d = new Date()
     return d.toISOString().split('T')[0]
 }
 
 export function BoardPage() {
-    const { workspaceId } = useParams<{ workspaceId: string }>()
+    const workspaceId = useParams<{ workspaceId: string }>().workspaceId
 
-    // Refs for animations
     const containerRef = useRef<HTMLDivElement>(null)
     const headerRef = useRef<HTMLDivElement>(null)
     const filtersRef = useRef<HTMLDivElement>(null)
     const tagsRef = useRef<HTMLDivElement>(null)
-
-    // Global Animations
 
 
     const [runDate, setRunDate] = useState(todayYYYYMMDD())
@@ -95,38 +92,32 @@ export function BoardPage() {
         }
     }, { scope: containerRef, dependencies: [isLoading] })
 
-    const [activeTask, setActiveTask] = useState<any>(null)
-    const [activeColumn, setActiveColumn] = useState<any>(null)
+    const [activeTask, setActiveTask] = useState<BoardTask | null>(null)
+    const [activeColumn, setActiveColumn] = useState<IBoardColumn | null>(null)
 
-    const [previewTask, setPreviewTask] = useState<any>(null)
+    const [previewTask, setPreviewTask] = useState<BoardTask | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [targetColumnForCreate, setTargetColumnForCreate] = useState<string>('todo')
 
-    // NEW: Column Creation State
     const [isCreateColumnOpen, setIsCreateColumnOpen] = useState(false)
 
-    // Layout Mode
     const [isLayoutMode, setIsLayoutMode] = useState(false)
 
-    // Local State for Optimistic UI
-    const [columns, setColumns] = useState<any[]>([])
+    const [columns, setColumns] = useState<IBoardColumn[]>([])
 
-    // Sync board data to local state
     useMemo(() => {
         if (board?.columns) {
             setColumns(board.columns)
         }
     }, [board])
 
-    // Column IDs for DndKit
     const columnIds = useMemo(() => columns.map(c => c.id), [columns])
 
-    // Extract unique tags
     const availableTags = useMemo(() => {
-        const map = new Map<string, { id: string, name: string, color: string }>()
+        const map = new Map<string, BoardTag>()
         columns.forEach(c => {
-            c.tasks?.forEach((t: any) => {
-                t.tags?.forEach((tag: any) => {
+            c.tasks?.forEach((t: BoardTask) => {
+                t.tags?.forEach((tag: BoardTag) => {
                     if (!map.has(tag.id)) map.set(tag.id, tag)
                 })
             })
@@ -140,15 +131,14 @@ export function BoardPage() {
     )
 
     const colsRef = useRef<HTMLDivElement>(null)
-    useBoxStagger(colsRef) // Will implement useBoxStagger or just useStaggerList
+    useBoxStagger(colsRef)
 
     const openCreateTaskModal = (colKey?: string) => {
         setTargetColumnForCreate(colKey || 'todo')
         setIsCreateOpen(true)
     }
 
-    // --- DnD Handlers ---
-    const findColumn = (id: string) => columns.find(c => c.tasks.some((t: any) => t.id === id) || c.id === id || c.key === id)
+    const findColumn = (id: string) => columns.find(c => c.tasks.some((t: BoardTask) => t.id === id) || c.id === id || c.key === id)
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event
@@ -175,7 +165,6 @@ export function BoardPage() {
         const overId = over.id as string
         const activeType = active.data.current?.type
 
-        // --- COLUMN REORDERING ---
         if (activeType === 'COLUMN') {
             if (activeId !== overId) {
                 const oldIndex = columns.findIndex(c => c.id === activeId)
@@ -183,25 +172,21 @@ export function BoardPage() {
                 if (oldIndex !== -1 && newIndex !== -1) {
                     const newCols = arrayMove(columns, oldIndex, newIndex)
                     setColumns(newCols)
-
-                    // Optimistic update done, save to backend is handled by toggle button
                 }
             }
             return
         }
 
-        // --- TASK REORDERING / MOVING ---
         const activeColumn = findColumn(activeId)
         const overColumn = findColumn(overId)
 
         if (!activeColumn || !overColumn) return
 
-        // Efficiently update BOTH status and sort order in one batch call if column exists
         if (overColumn) {
-            const items = overColumn.tasks.map((t: any, i: number) => ({
+            const items = overColumn.tasks.map((t: BoardTask, i: number) => ({
                 id: t.id,
                 sortOrder: i + 1,
-                status: overColumn.key // This updates the task status if it moved columns
+                status: overColumn.key
             }))
 
             if (items.length > 0) {
@@ -235,7 +220,7 @@ export function BoardPage() {
 
                 if (activeColIndex === -1 || overColIndex === -1) return prev
 
-                const activeTaskIndex = prev[activeColIndex].tasks.findIndex((t: any) => t.id === activeId)
+                const activeTaskIndex = prev[activeColIndex].tasks.findIndex((t: BoardTask) => t.id === activeId)
                 if (activeTaskIndex === -1) return prev
 
                 const activeTask = prev[activeColIndex].tasks[activeTaskIndex]
@@ -246,7 +231,7 @@ export function BoardPage() {
 
                 newActiveCol.tasks.splice(activeTaskIndex, 1)
 
-                const overTaskIndex = newOverCol.tasks.findIndex((t: any) => t.id === overId)
+                const overTaskIndex = newOverCol.tasks.findIndex((t: BoardTask) => t.id === overId)
                 let newIndex
                 if (overTaskIndex >= 0) {
                     const isBelowOverItem = over && active.rect.current.translated && active.rect.current.translated.top > over.rect.top + over.rect.height;
@@ -258,7 +243,7 @@ export function BoardPage() {
 
                 if (isNaN(newIndex)) newIndex = newOverCol.tasks.length
 
-                newOverCol.tasks.splice(newIndex, 0, activeTask) // Insert
+                newOverCol.tasks.splice(newIndex, 0, activeTask)
 
                 newCols[activeColIndex] = newActiveCol
                 newCols[overColIndex] = newOverCol
@@ -268,8 +253,8 @@ export function BoardPage() {
         }
     }
 
-    const handleCreateTaskSubmit = async (data: any) => {
-        await createTask.mutateAsync({ ...data, workspaceId })
+    const handleCreateTaskSubmit = async (data: Partial<BoardTask>) => {
+        await createTask.mutateAsync({ ...data, workspaceId } as any)
         setIsCreateOpen(false)
     }
 
@@ -277,11 +262,12 @@ export function BoardPage() {
 
     const handleCreateRecurrence = async (data: any) => {
         try {
+            const { status, ...rest } = data
             await createRecurrence({
-                ...data,
+                ...rest,
+                statusDefault: status || 'todo',
                 cadence: 'daily',
-                isActive: true,
-                statusDefault: data.status
+                isActive: true
             })
             await runDaily({ runDate })
         } catch (error) {
@@ -289,7 +275,6 @@ export function BoardPage() {
         }
     }
 
-    // Toggle Helpers
     const toggleStatus = (status: string) => {
         setFilterStatuses(prev => prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status])
     }
@@ -305,11 +290,10 @@ export function BoardPage() {
         setFilterRecurrentOnly(false)
     }
 
-    const hasFilters = filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0 || filterRecurrentOnly
+    const hasFilters = !!(filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0 || filterRecurrentOnly)
 
     const handleToggleLayoutMode = async () => {
         if (isLayoutMode) {
-            // Save changes
             const items = columns.map((c, i) => ({ id: c.id, sortOrder: i + 1 }))
             if (items.length > 0) {
                 await updateColumnSortBatch.mutateAsync(items)
@@ -327,7 +311,6 @@ export function BoardPage() {
             onDragOver={handleDragOver}
         >
             <div className="space-y-4" ref={containerRef}>
-                {/* Board Header & Filters */}
                 <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 space-y-4 relative">
                     <div className="flex items-center justify-between flex-wrap gap-4" ref={headerRef}>
                         <div>
@@ -389,15 +372,11 @@ export function BoardPage() {
                                 />
                             </div>
                         </div>
-
-
-
                     </div>
 
                     <div className="flex items-center gap-4 flex-wrap" ref={tagsRef}>
-                        {/* Status Filters */}
                         <div className="flex items-center gap-2">
-                            {columns.map((col: any) => (
+                            {columns.map((col: IBoardColumn) => (
                                 <LiquidButton
                                     key={col.key}
                                     variant="ghost"
@@ -409,31 +388,26 @@ export function BoardPage() {
                             ))}
                         </div>
 
-                        {/* Divider */}
                         {availableTags.length > 0 && <div className="w-px h-6 bg-white/10" />}
 
-                        {/* Tag Filters */}
                         <div className="flex items-center gap-2">
-                            {availableTags.map((tag: any) => (
+                            {availableTags.map((tag: BoardTag) => (
                                 <LiquidButton
                                     key={tag.id}
                                     variant="ghost"
                                     onClick={() => toggleTag(tag.id)}
                                     className={`!px-2 !py-1 !rounded text-[10px] border ${filterTags.includes(tag.id) ? 'bg-white/10' : 'opacity-60 grayscale'}`}
-                                    style={{ color: tag.color, borderColor: tag.color }}
+                                    style={{ color: tag.color || undefined, borderColor: tag.color || undefined }}
                                 >
                                     {tag.name}
                                 </LiquidButton>
                             ))}
                         </div>
                     </div>
-
-
                 </div>
 
                 {isLoading && <div className="text-center p-8 text-white/40">Loading board...</div>}
 
-                {/* Board Columns */}
                 {!isLoading && board && (
                     <div className="flex-1 overflow-hidden relative pt-6">
                         <LiquidScrollArea orientation="horizontal" className="h-full">
@@ -442,7 +416,7 @@ export function BoardPage() {
                                     {columns.map((col) => {
                                         const tasksInColumn = col.tasks || []
                                         const filteredTasks = filterRecurrentOnly
-                                            ? tasksInColumn.filter((t: any) => t.templateId)
+                                            ? tasksInColumn.filter((t: BoardTask) => t.templateId)
                                             : tasksInColumn
 
                                         return (
@@ -453,9 +427,9 @@ export function BoardPage() {
                                                 onAddTask={() => openCreateTaskModal(col.key)}
                                                 isLayoutMode={isLayoutMode}
                                             >
-                                                <SortableContext items={filteredTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
+                                                <SortableContext items={filteredTasks.map((t: BoardTask) => t.id)} strategy={verticalListSortingStrategy}>
                                                     <DroppableColumnBody columnId={col.id}>
-                                                        {filteredTasks.map((task: any) => (
+                                                        {filteredTasks.map((task: BoardTask) => (
                                                             <TaskCard
                                                                 key={task.id}
                                                                 task={task}
@@ -469,7 +443,6 @@ export function BoardPage() {
                                     })}
                                 </SortableContext>
 
-                                {/* Add Column Button */}
                                 <div className="w-[300px] flex-shrink-0 pt-4 opacity-50 hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={() => setIsCreateColumnOpen(true)}
@@ -487,7 +460,6 @@ export function BoardPage() {
                 )}
             </div>
 
-            {/* Modals */}
             <TaskPreviewModal
                 isOpen={!!previewTask}
                 onClose={() => setPreviewTask(null)}
@@ -517,7 +489,6 @@ export function BoardPage() {
                 )}
                 {activeColumn && (
                     <BoardColumn
-                        // id and title removed
                         column={activeColumn}
                         tasks={activeColumn.tasks}
                         isOverlay
@@ -528,7 +499,7 @@ export function BoardPage() {
     )
 }
 
-function useBoxStagger(ref: any) {
+function useBoxStagger(ref: React.RefObject<HTMLDivElement | null>) {
     useGSAP(() => {
         if (!ref.current) return
         gsap.fromTo(ref.current.children,

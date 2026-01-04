@@ -9,10 +9,12 @@ import { Check, Loader2 } from 'lucide-react'
 import { useStaggerList } from '../../hooks/useAnimations'
 import { LiquidButton } from '../ui/LiquidButton'
 
+import type { BoardTask, BoardTag } from '../../types/board'
+
 interface TaskPreviewModalProps {
     isOpen: boolean
     onClose: () => void
-    task: any
+    task: BoardTask | null
 }
 
 export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProps) {
@@ -23,7 +25,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
     const [dueDate, setDueDate] = useState('')
     const [points, setPoints] = useState(0)
 
-    // Animation Ref
     const formRef = useRef<HTMLDivElement>(null)
     useStaggerList(formRef, { delay: 0.2, dependencies: [isOpen] })
 
@@ -33,16 +34,15 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
             setDescription(task.description || '')
             setPriority(task.priority || 0)
             setDueDate(task.dueDate || '')
-            setPoints(task.points || 0)
+            setPoints((task as any).points || 0)
         }
     }, [task, isOpen])
 
-    const updateTask = useUpdateTask(task?.workspaceId || '')
+    const updateTask = useUpdateTask((task as any)?.workspaceId || '')
 
     const handleSave = async () => {
         if (!task) return
 
-        // Validation
         if (!title.trim()) {
             toast({
                 title: 'Validation Error',
@@ -74,7 +74,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Task">
             <div className="space-y-5" ref={formRef}>
-                {/* Title */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Title</label>
                     <LiquidInput
@@ -85,7 +84,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
                     />
                 </div>
 
-                {/* Priority & Points Row */}
                 <div className="grid grid-cols-2 gap-4">
                     <LiquidSelect
                         label="Priority"
@@ -110,7 +108,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
                     </div>
                 </div>
 
-                {/* Due Date */}
                 <div className="space-y-1">
                     <LiquidDateInput
                         label="Due Date"
@@ -119,7 +116,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
                     />
                 </div>
 
-                {/* Description */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Description</label>
                     <LiquidTextArea
@@ -130,12 +126,11 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
                     />
                 </div>
 
-                {/* Tags Display (Read-only for now) */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Tags</label>
                     <div className="flex flex-wrap gap-2 p-2 bg-black/20 rounded-xl border border-white/5 min-h-[40px]">
                         {task.tags && task.tags.length > 0 ? (
-                            task.tags.map((tag: any) => (
+                            task.tags.map((tag: BoardTag) => (
                                 <span
                                     key={tag.id}
                                     className="px-2 py-1 rounded-lg text-xs font-medium border border-white/10"
@@ -150,7 +145,6 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
                     </div>
                 </div>
 
-                {/* Footer Actions */}
                 <div className="flex justify-end pt-4 border-t border-white/5">
                     <LiquidButton
                         onClick={handleSave}

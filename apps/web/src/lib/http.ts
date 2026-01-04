@@ -36,7 +36,6 @@ async function apiFetch<T>(
 
         const res = await fetch(`${API_BASE}${endpoint}`, options)
 
-        // 1. Manejar respuestas no-JSON (e.g. 502 Bad Gateway HTML, o vacías)
         let json: ApiEnvelope<T> | null = null
         try {
             const text = await res.text()
@@ -44,10 +43,8 @@ async function apiFetch<T>(
                 json = JSON.parse(text)
             }
         } catch (e) {
-            // No es JSON válido, probablemente un error del servidor (nginx 500 html, etc)
         }
 
-        // 2. Errores HTTP (status != 2xx)
         if (!res.ok) {
             const errorMsg = json?.message || `Error ${res.status}: ${res.statusText}`
             const errorCode = json?.code || 'HTTP_ERROR'
@@ -57,8 +54,6 @@ async function apiFetch<T>(
             throw new Error(`${errorCode}: ${errorMsg} (traceId=${traceId})`)
         }
 
-        // 3. Éxito
-        // Si no hay body de respuesta pero fue 200/204, devolvemos algo genérico
         if (!json) {
             return {
                 code: 'SUCCESS',
@@ -68,30 +63,21 @@ async function apiFetch<T>(
             }
         }
 
-        // Éxito con mutaciones -> Toast automático
         if (method !== 'GET') {
             toastService.success(json.message || 'Operation successful')
         }
 
         return json
-    } catch (error: any) {
-        // 4. Errores de Red / Sin conexión (fetch throws TypeError)
-        // Ya lanzamos Error arriba para !res.ok, así que verificamos si ya fue manejado (si mostramos toast)
-        // O si es un error nativo de fetch
-
-        // Si es nuestro error lanzado arriba, ya tuvo toast.
-        // Si es TypeError de fetch (Failed to fetch), no tuvo toast.
-
-        const isNetworkError = error instanceof TypeError && error.message.includes('fetch');
-        if (isNetworkError || error.message === 'Failed to fetch') {
+    } catch (error: unknown) {
+        const err = error as Error
+        const isNetworkError = err instanceof TypeError && err.message.includes('fetch');
+        if (isNetworkError || err.message === 'Failed to fetch') {
             toastService.error('Could not connect to server. Please check your connection.')
-        } else if (!error.message.includes('(traceId=')) {
-            // Error desconocido que no vino de nuestro throw anterior
-            toastService.error(error.message || 'Unknown error occurred')
+        } else if (!err.message.includes('(traceId=')) {
+            toastService.error(err.message || 'Unknown error occurred')
         }
 
-        // Re-lanzar para que el componente que llamó pueda saber que falló
-        throw error
+        throw err
     }
 }
 

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { TagModel } from '../../tag/models/tag.model';
 
 export class RecurrenceTemplateModel {
   @ApiProperty({ example: '7e2f55f3-8d1c-4d0f-9a2b-20a3c4e5f6a7' })
@@ -30,4 +31,7 @@ export class RecurrenceTemplateModel {
 
   @ApiProperty({ required: false, example: '2025-12-15T12:10:00.000Z' })
   updatedAt?: string;
+
+  @ApiProperty({ example: [], required: false, type: [TagModel] })
+  tags?: TagModel[];
 }

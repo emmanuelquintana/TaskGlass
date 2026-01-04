@@ -24,7 +24,7 @@ function maskValue(value: unknown): unknown {
     return '***';
 }
 
-function redactObject(input: any, depth = 0): any {
+function redactObject(input: unknown, depth = 0): unknown {
     if (input == null) return input;
     if (depth > 4) return '[MaxDepth]';
 
@@ -34,7 +34,7 @@ function redactObject(input: any, depth = 0): any {
 
     if (typeof input === 'object') {
         const out: Record<string, unknown> = {};
-        for (const [k, v] of Object.entries(input)) {
+        for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
             const key = String(k).toLowerCase();
             if (SENSITIVE_KEYS.has(key)) {
                 out[k] = maskValue(v);
