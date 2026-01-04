@@ -121,7 +121,43 @@ function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => v
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0 : 1
+        opacity: isDragging ? 0.3 : 1
+    }
+
+    const containerRef = useRef<HTMLDivElement>(null)
+    const innerRef = useRef<HTMLDivElement>(null)
+
+    useGSAP(() => {
+        if (!isDragging) {
+            gsap.from(innerRef.current, {
+                y: 10,
+                opacity: 0,
+                duration: 0.4,
+                ease: 'power2.out'
+            })
+        }
+    }, [task.id])
+
+    const handleMouseEnter = () => {
+        if (!isDragging && innerRef.current) {
+            gsap.to(innerRef.current, {
+                scale: 1.02,
+                filter: 'brightness(1.1)',
+                duration: 0.3,
+                ease: 'power2.out'
+            })
+        }
+    }
+
+    const handleMouseLeave = () => {
+        if (!isDragging && innerRef.current) {
+            gsap.to(innerRef.current, {
+                scale: 1,
+                filter: 'brightness(1)',
+                duration: 0.3,
+                ease: 'power2.out'
+            })
+        }
     }
 
     // Priority color helper
@@ -132,60 +168,66 @@ function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => v
     }
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            onClick={() => onClick(task)}
-            className="tg-liquid tg-grain tg-interactive rounded-2xl p-4 cursor-grab active:cursor-grabbing hover:translate-y-[-2px] transition-all group relative overflow-hidden"
-        >
-            {/* Task Content */}
-            <div className="space-y-3 relative z-10">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="font-medium text-sm leading-snug line-clamp-2 text-white/90">
-                        {task.title}
-                    </div>
-                </div>
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none mb-2">
+            {/* Wrapper for GSAP to avoid conflict with DnD transform */}
+            <div
+                ref={containerRef}
+                className="w-full"
+            >
+                <div
+                    ref={innerRef}
+                    onClick={() => onClick(task)}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    className="tg-liquid tg-grain tg-interactive rounded-xl p-3 border border-white/5 cursor-grab active:cursor-grabbing relative overflow-hidden"
+                >
+                    {/* Task Content */}
+                    <div className="space-y-3 relative z-10">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="font-medium text-sm leading-snug line-clamp-2 text-white/90">
+                                {task.title}
+                            </div>
+                        </div>
 
-                {/* Meta Row */}
-                <div className="flex items-center justify-between text-[10px] text-white/40 font-medium">
-                    <div className="flex items-center gap-2">
-                        <span className={`${getPriorityColor(task.priority)} flex items-center gap-1`}>
-                            P{task.priority || 4}
-                        </span>
-                        {task.points && (
-                            <span className="bg-white/5 px-1.5 py-0.5 rounded ml-1 text-white/60">
-                                {task.points} pts
-                            </span>
+                        {/* Meta Row */}
+                        <div className="flex items-center justify-between text-[10px] text-white/40 font-medium">
+                            <div className="flex items-center gap-2">
+                                <span className={`${getPriorityColor(task.priority)} flex items-center gap-1`}>
+                                    P{task.priority || 4}
+                                </span>
+                                {task.points && (
+                                    <span className="bg-white/5 px-1.5 py-0.5 rounded ml-1 text-white/60">
+                                        {task.points} pts
+                                    </span>
+                                )}
+                                {task.templateId && <Repeat className="w-3 h-3 text-blue-300" />}
+                            </div>
+                        </div>
+
+                        {/* Tags */}
+                        {task.tags && task.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                {task.tags.map((tag: any) => (
+                                    <span
+                                        key={tag.id}
+                                        className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold border"
+                                        style={{
+                                            borderColor: tag.color || '#666',
+                                            color: tag.color || '#666',
+                                            backgroundColor: `${tag.color || '#666'}10`
+                                        }}
+                                    >
+                                        {tag.name}
+                                    </span>
+                                ))}
+                            </div>
                         )}
-                        {task.templateId && <Repeat className="w-3 h-3 text-blue-300" />}
                     </div>
                 </div>
-
-                {/* Tags */}
-                {task.tags && task.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                        {task.tags.map((tag: any) => (
-                            <span
-                                key={tag.id}
-                                className="px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-bold border"
-                                style={{
-                                    borderColor: tag.color || '#666',
-                                    color: tag.color || '#666',
-                                    backgroundColor: `${tag.color || '#666'}10`
-                                }}
-                            >
-                                {tag.name}
-                            </span>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     )
 }
-
 
 export function BoardPage() {
     const { workspaceId } = useParams()

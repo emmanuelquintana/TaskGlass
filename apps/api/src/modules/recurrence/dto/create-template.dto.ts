@@ -35,4 +35,10 @@ export class CreateRecurrenceTemplateDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  tagIds?: string[];
 }
