@@ -32,6 +32,7 @@ import {
 import { TaskPreviewModal } from '../components/board/TaskPreviewModal'
 import { CreateTaskModal } from '../components/board/CreateTaskModal'
 import { CreateColumnModal } from '../components/board/CreateColumnModal'
+import { LiquidScrollArea } from '../components/ui/LiquidScrollArea'
 import { LiquidSelect } from '../components/ui/LiquidSelect'
 import { LiquidDateInput } from '../components/ui/LiquidDateInput'
 import { LiquidButton } from '../components/ui/LiquidButton'
@@ -439,55 +440,58 @@ export function BoardPage() {
 
                 {/* Board Columns */}
                 {!isLoading && board && (
-                    <div className="flex-1 overflow-x-auto pt-6">
-                        <div className="h-full flex px-4 pb-12 gap-6 min-w-fit" ref={colsRef}>
-                            <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-                                {columns.map((col) => {
-                                    const tasksInColumn = col.tasks || []
-                                    const filteredTasks = filterRecurrentOnly
-                                        ? tasksInColumn.filter((t: any) => t.templateId)
-                                        : tasksInColumn
+                    <div className="flex-1 overflow-hidden relative pt-6">
+                        <LiquidScrollArea orientation="horizontal" className="h-full">
+                            <div className="h-full flex px-4 pb-12 gap-6 min-w-max" ref={colsRef}>
+                                <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+                                    {columns.map((col) => {
+                                        const tasksInColumn = col.tasks || []
+                                        const filteredTasks = filterRecurrentOnly
+                                            ? tasksInColumn.filter((t: any) => t.templateId)
+                                            : tasksInColumn
 
-                                    return (
-                                        <BoardColumn
-                                            key={col.id}
-                                            column={col}
-                                            tasks={filteredTasks}
-                                            onAddTask={() => openCreateTaskModal(col.key)}
-                                            isLayoutMode={isLayoutMode}
-                                        >
-                                            <SortableContext items={filteredTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
-                                                <DroppableColumnBody columnId={col.id}>
-                                                    {filteredTasks.map((task: any) => (
-                                                        <TaskCard
-                                                            key={task.id}
-                                                            task={task}
-                                                            onClick={(t) => setPreviewTask(t)}
-                                                        />
-                                                    ))}
-                                                </DroppableColumnBody>
-                                            </SortableContext>
-                                        </BoardColumn>
-                                    )
-                                })}
-                            </SortableContext>
+                                        return (
+                                            <BoardColumn
+                                                key={col.id}
+                                                column={col}
+                                                tasks={filteredTasks}
+                                                onAddTask={() => openCreateTaskModal(col.key)}
+                                                isLayoutMode={isLayoutMode}
+                                            >
+                                                <SortableContext items={filteredTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
+                                                    <DroppableColumnBody columnId={col.id}>
+                                                        {filteredTasks.map((task: any) => (
+                                                            <TaskCard
+                                                                key={task.id}
+                                                                task={task}
+                                                                onClick={(t) => setPreviewTask(t)}
+                                                            />
+                                                        ))}
+                                                    </DroppableColumnBody>
+                                                </SortableContext>
+                                            </BoardColumn>
+                                        )
+                                    })}
+                                </SortableContext>
 
-                            {/* Add Column Button */}
-                            <div className="w-[300px] flex-shrink-0 pt-4 opacity-50 hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={() => setIsCreateColumnOpen(true)}
-                                    className="w-full h-[150px] border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all group"
-                                >
-                                    <div className="p-3 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
-                                        <Plus className="w-6 h-6" />
-                                    </div>
-                                    <span className="font-medium">Add Column</span>
-                                </button>
+                                {/* Add Column Button */}
+                                <div className="w-[300px] flex-shrink-0 pt-4 opacity-50 hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => setIsCreateColumnOpen(true)}
+                                        className="w-full h-[150px] border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all group"
+                                    >
+                                        <div className="p-3 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                                            <Plus className="w-6 h-6" />
+                                        </div>
+                                        <span className="font-medium">Add Column</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </LiquidScrollArea>
                     </div>
                 )}
             </div>
+
             {/* Modals */}
             <TaskPreviewModal
                 isOpen={!!previewTask}
