@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateTaskDto {
   @ApiProperty({ example: 'Updated title', required: false, maxLength: 160 })
@@ -12,5 +12,11 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   @MaxLength(2000)
+  @MaxLength(2000)
   description?: string;
+
+  @ApiProperty({ example: 'todo', required: false })
+  @IsOptional()
+  @IsIn(['todo', 'doing', 'blocked', 'done'])
+  status?: string;
 }

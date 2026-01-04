@@ -11,4 +11,24 @@ export class BoardQueryDto {
     @IsOptional()
     @IsUUID()
     savedViewId?: string;
+
+    @ApiPropertyOptional({ description: 'Search term for title/description' })
+    @IsOptional()
+    q?: string;
+
+    @ApiPropertyOptional({ description: 'Filter by priority (min)' })
+    @IsOptional()
+    priorityMin?: number;
+
+    @ApiPropertyOptional({ description: 'Filter by priority (max)' })
+    @IsOptional()
+    priorityMax?: number;
+
+    @ApiPropertyOptional({ description: 'Filter by status', isArray: true, type: String })
+    @IsOptional()
+    statuses?: string[];
+
+    @ApiPropertyOptional({ description: 'Filter by tags', isArray: true, type: String })
+    @IsOptional()
+    tagIds?: string[];
 }

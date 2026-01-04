@@ -105,7 +105,7 @@ export function LiquidBackdrop({ fps = 30, scale = 0.6 }: Props) {
         };
     }, [fps, scale]);
 
-    return <canvas ref={ref} className="tg-backdrop" style={{ filter: 'blur(70px) saturate(150%) contrast(112%)', transform: 'scale(1.08)' }} />;
+    return <canvas ref={ref} id="tg-backdrop" className="tg-backdrop" style={{ filter: 'blur(70px) saturate(150%) contrast(112%)', transform: 'scale(1.08)' }} />;
 }
 
 function hexToRgba(hex: string, a: number) {

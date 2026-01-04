@@ -3,6 +3,7 @@ import { Topbar } from "./Topbar";
 import { Sidebar } from "./Sidebar";
 import { AppBackground } from "../../shared/backgrounds/AppBackground";
 import { LiquidGlassLayer } from "../../shared/liquid/LiquidGlassLayer";
+import { GlobalLoading } from "../ui/GlobalLoading";
 
 export function ShellLayout() {
     return (
@@ -10,6 +11,7 @@ export function ShellLayout() {
             {/* Fondo configurable + vidrio WebGL */}
             <AppBackground />
             <LiquidGlassLayer />
+            <GlobalLoading />
 
             {/* UI */}
             <div className="h-full w-full p-4 flex gap-4">

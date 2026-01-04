@@ -1,7 +1,9 @@
 export type BoardColumn = {
+    id: string
     key: string            // todo | in_progress | blocked | done
     title: string
     sortOrder: number
+    tasks: BoardTask[]
 }
 
 export type BoardTask = {
@@ -19,6 +21,6 @@ export type BoardResponse = {
     workspaceId: string
     runDate?: string
     columns: BoardColumn[]
-    tasks: BoardTask[]
+    // tasks: BoardTask[] // Removed because tasks are now nested in columns
     savedView?: { id: string; name: string } | null
 }

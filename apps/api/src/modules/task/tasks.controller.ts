@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Patch, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ResponseCode } from '../../common/decorators/response-code.decorator';
 import { ApiOkResponseWrapped } from '../../common/response/swagger-response.decorator';
 import { TaskService } from './task.service';
 import { TaskIdParamDto } from './dto/task-id.param.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { CreateTaskDto } from './dto/create-task.dto';
 import { TaskStatusDto } from './dto/task-status.dto';
 import { TaskModel } from './models/task.model';
 import { BatchUpdateTaskSortOrderDto } from './dto/batch-update-task-sort-order.dto';
@@ -21,6 +22,14 @@ export class TasksController {
   @ApiOkResponseWrapped(TaskModel)
   async getById(@Param() p: TaskIdParamDto): Promise<TaskModel> {
     return this.taskService.getById(p.id);
+  }
+
+  @Post()
+  @ApiBody({ type: CreateTaskDto })
+  @ResponseCode('TG_TS_201')
+  @ApiOkResponseWrapped(TaskModel)
+  async create(@Body() dto: CreateTaskDto): Promise<TaskModel> {
+    return this.taskService.create(dto.workspaceId, dto);
   }
 
   @Patch(':id')

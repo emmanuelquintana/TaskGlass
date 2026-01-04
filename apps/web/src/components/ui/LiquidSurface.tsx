@@ -25,7 +25,7 @@ export function LiquidSurface({
         .join(" ");
 
     return (
-        <div ref={ref} className={cls}>
+        <div ref={ref} className={cls} data-liquid="1">
             {children}
         </div>
     );

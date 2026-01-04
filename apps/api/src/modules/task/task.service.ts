@@ -139,26 +139,99 @@ export class TaskService {
     await this.assertWorkspaceExists(workspaceId);
 
     const status = dto.status ?? 'todo';
+    const priority = dto.priority ?? 0;
+    const dueDate = dto.dueDate ?? null;
 
-    const rows = await this.prisma.$queryRaw<TaskRow[]>`
-      insert into tg_task (workspace_id, status, title, description)
-      values (
-        ${workspaceId}::uuid,
-        ${status}::tg_task_status,
-        ${dto.title},
-        ${dto.description ?? null}
-      )
-      returning
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        status::text as status,
-        title,
-        description,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Create Task
+      const rows = await tx.$queryRaw<TaskRow[]>`
+        insert into tg_task (workspace_id, status, title, description, priority, due_date)
+        values (
+            ${workspaceId}::uuid,
+            ${status}::tg_task_status,
+            ${dto.title},
+            ${dto.description ?? null},
+            ${priority},
+            ${dueDate}
+        )
+        returning
+            id::text as id,
+            workspace_id::text as "workspaceId",
+            status::text as status,
+            title,
+            description,
+            priority::int as priority,
+            due_date::text as "dueDate",
+            sort_order::int as "sortOrder",
+            template_id::text as "templateId",
+            created_at as "createdAt",
+            updated_at as "updatedAt"
+        `;
+      const newTask = rows[0];
 
-    return this.mapRow(rows[0]);
+      // 2. Insert Tags if Present
+      if (dto.tagIds && dto.tagIds.length > 0) {
+        const uniqueTags = [...new Set(dto.tagIds)];
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        for (const tagValue of uniqueTags) {
+          let tagIdToLink = tagValue;
+
+          if (!uuidRegex.test(tagValue)) {
+            // It's a name, find or create
+            // Check if exists
+            const existing = await tx.$queryRaw<{ id: string }[]>`
+                select id from tg_tag 
+                where name = ${tagValue} 
+                  and workspace_id = ${workspaceId}::uuid
+                limit 1
+            `;
+
+            if (existing[0]) {
+              tagIdToLink = existing[0].id;
+            } else {
+              // Create new tag
+              const newTagRows = await tx.$queryRaw<{ id: string }[]>`
+                    insert into tg_tag (workspace_id, name, group_key, color)
+                    values (
+                        ${workspaceId}::uuid, 
+                        ${tagValue}, 
+                        'general', 
+                        '#6b7280'
+                    )
+                    on conflict (workspace_id, group_key, name) do update set updated_at = now()
+                    returning id::text
+                `;
+              // If on conflict triggered and didn't return (some pg versions), we might need to fetch again. 
+              // But returning usually works with on conflict update.
+              // However, simpler to just insert. Assuming unique constraint on (workspace_id, name).
+              // If it failed to return, we query again.
+              if (newTagRows[0]) {
+                tagIdToLink = newTagRows[0].id;
+              } else {
+                const retry = await tx.$queryRaw<{ id: string }[]>`
+                        select id from tg_tag 
+                        where name = ${tagValue} 
+                          and workspace_id = ${workspaceId}::uuid
+                        limit 1
+                    `;
+                if (retry[0]) tagIdToLink = retry[0].id;
+              }
+            }
+          }
+
+          if (uuidRegex.test(tagIdToLink)) {
+            await tx.$executeRaw`
+                insert into tg_task_tag (task_id, tag_id)
+                values (${newTask.id}::uuid, ${tagIdToLink}::uuid)
+                on conflict do nothing
+             `;
+          }
+        }
+      }
+
+      return this.mapRow(newTask);
+    });
   }
 
   async update(id: string, dto: UpdateTaskDto): Promise<TaskModel> {
@@ -167,6 +240,7 @@ export class TaskService {
       set
         title = coalesce(${dto.title ?? null}, title),
         description = coalesce(${dto.description ?? null}, description),
+        status = coalesce(${dto.status}::tg_task_status, status),
         updated_at = now()
       where id = ${id}::uuid
       returning

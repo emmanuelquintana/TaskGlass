@@ -49,8 +49,8 @@
   --lg-bg-tint: rgba(255, 255, 255, 0.03);
 
   /* Caustics Dark: Luces brillantes */
-  --lg-caustic-blend: overlay;
-  --lg-caustic-opacity: 0.8;
+  --lg-caustic-blend: hard-light;
+  --lg-caustic-opacity: 0.6;
   --lg-caustic-grad:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
     radial-gradient(circle at 0% 100%, rgba(255, 255, 255, 0.2), transparent 50%),
@@ -87,8 +87,9 @@
 
   background: var(--lg-bg-tint);
 
-  backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
-  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(180%) contrast(110%);
+  /* Refraction via SVG Filter */
+  /* backdrop-filter: url(#tg-liquid-glass-distort) blur(var(--lg-blur)) brightness(1.1) saturate(1.2); */
+  /* -webkit-backdrop-filter: url(#tg-liquid-glass-distort) blur(var(--lg-blur)) brightness(1.1) saturate(1.2); */
 
   z-index: -2;
   transition: background 0.3s ease;

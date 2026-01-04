@@ -7,100 +7,120 @@ import { BoardTaskModel } from './models/board-task.model';
 import { BoardTagModel } from './models/board-tag.model';
 
 type ColumnRow = {
-    id: string;
-    key: string;
-    title: string;
-    sortOrder: number;
+  id: string;
+  key: string;
+  title: string;
+  sortOrder: number;
 };
 
 type TaskRow = {
-    id: string;
-    workspaceId: string;
-    status: string;
-    title: string;
-    description: string | null;
-    priority: number;
-    dueDate: string | null;
-    sortOrder: number;
-    templateId: string | null;
-    createdAt: Date | null;
-    tags: any;
+  id: string;
+  workspaceId: string;
+  status: string;
+  title: string;
+  description: string | null;
+  priority: number;
+  dueDate: string | null;
+  sortOrder: number;
+  templateId: string | null;
+  createdAt: Date | null;
+  tags: any;
 };
 
 
 type SavedViewRow = {
-    id: string;
-    workspaceId: string;
-    filters: unknown;
-    sort: unknown;
+  id: string;
+  workspaceId: string;
+  filters: unknown;
+  sort: unknown;
 };
 
 type SavedViewFilters = {
+  q?: string;
+  statuses?: string[];
+  priorityMin?: number;
+  priorityMax?: number;
+  tagIds?: string[];
+  includeBacklog?: boolean;
+};
+@Injectable()
+export class BoardService {
+  constructor(private readonly prisma: PrismaService) { }
+
+  private async assertWorkspaceExists(workspaceId: string): Promise<void> {
+    const ws = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+      select exists(select 1 from tg_workspace where id = ${workspaceId}::uuid) as "exists"
+    `;
+    if (!ws[0]?.exists) throw new WorkspaceNotFoundException();
+  }
+
+  private normalizeTags(tags: any): BoardTagModel[] {
+    if (Array.isArray(tags)) return tags as BoardTagModel[];
+    if (tags && typeof tags === 'object' && Array.isArray(tags?.value)) return tags.value as BoardTagModel[];
+    return [];
+  }
+
+  private normalizeFilters(raw: unknown): SavedViewFilters {
+    const obj = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+    const q = typeof obj.q === 'string' ? obj.q.trim() : '';
+    const statuses = Array.isArray(obj.statuses) ? obj.statuses.filter((s) => typeof s === 'string') as string[] : undefined;
+    const priorityMin = typeof obj.priorityMin === 'number' ? obj.priorityMin : undefined;
+    const priorityMax = typeof obj.priorityMax === 'number' ? obj.priorityMax : undefined;
+    const tagIds = Array.isArray(obj.tagIds) ? obj.tagIds.filter((s) => typeof s === 'string') as string[] : undefined;
+    const includeBacklog = typeof obj.includeBacklog === 'boolean' ? obj.includeBacklog : true;
+
+    const allowed = new Set(['todo', 'in_progress', 'blocked', 'done']);
+    const statusesClean = statuses?.filter((s) => allowed.has(s)) ?? undefined;
+
+    return {
+      q,
+      statuses: statusesClean?.length ? statusesClean : undefined,
+      priorityMin,
+      priorityMax,
+      tagIds: tagIds?.length ? tagIds : undefined,
+      includeBacklog
+    };
+  }
+
+
+  async getBoard(workspaceId: string, opts: {
+    runDate?: string;
+    savedViewId?: string;
     q?: string;
     statuses?: string[];
     priorityMin?: number;
     priorityMax?: number;
     tagIds?: string[];
-    includeBacklog?: boolean;
-};
-@Injectable()
-export class BoardService {
-    constructor(private readonly prisma: PrismaService) { }
+  }): Promise<BoardModel> {
+    await this.assertWorkspaceExists(workspaceId);
 
-    private async assertWorkspaceExists(workspaceId: string): Promise<void> {
-        const ws = await this.prisma.$queryRaw<{ exists: boolean }[]>`
-      select exists(select 1 from tg_workspace where id = ${workspaceId}::uuid) as "exists"
-    `;
-        if (!ws[0]?.exists) throw new WorkspaceNotFoundException();
+    // 1. Start with Empty Filters
+    let filters: SavedViewFilters = { includeBacklog: true, q: '' };
+
+    // 2. Load Saved View if present
+    if (opts.savedViewId) {
+      const sv = await this.loadSavedView(workspaceId, opts.savedViewId);
+      filters = this.normalizeFilters(sv.filters);
     }
 
-    private normalizeTags(tags: any): BoardTagModel[] {
-        if (Array.isArray(tags)) return tags as BoardTagModel[];
-        if (tags && typeof tags === 'object' && Array.isArray(tags?.value)) return tags.value as BoardTagModel[];
-        return [];
-    }
+    // 3. Override/Merge with explicit Query Params (if provided)
+    if (opts.q !== undefined) filters.q = opts.q;
+    if (opts.statuses !== undefined) filters.statuses = opts.statuses;
+    if (opts.priorityMin !== undefined) filters.priorityMin = opts.priorityMin;
+    if (opts.priorityMax !== undefined) filters.priorityMax = opts.priorityMax;
+    if (opts.tagIds !== undefined) filters.tagIds = opts.tagIds;
 
-    private normalizeFilters(raw: unknown): SavedViewFilters {
-        const obj = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
-        const q = typeof obj.q === 'string' ? obj.q.trim() : '';
-        const statuses = Array.isArray(obj.statuses) ? obj.statuses.filter((s) => typeof s === 'string') as string[] : undefined;
-        const priorityMin = typeof obj.priorityMin === 'number' ? obj.priorityMin : undefined;
-        const priorityMax = typeof obj.priorityMax === 'number' ? obj.priorityMax : undefined;
-        const tagIds = Array.isArray(obj.tagIds) ? obj.tagIds.filter((s) => typeof s === 'string') as string[] : undefined;
-        const includeBacklog = typeof obj.includeBacklog === 'boolean' ? obj.includeBacklog : true;
+    // 4. Extract final values for query
+    const q = filters.q ?? '';
+    const statuses = filters.statuses ?? null;
+    const priorityMin = filters.priorityMin ?? null;
+    const priorityMax = filters.priorityMax ?? null;
+    const tagIds = filters.tagIds ?? null;
+    const includeBacklog = filters.includeBacklog ?? true;
+    const runDate = opts.runDate;
 
-        const allowed = new Set(['todo', 'in_progress', 'blocked', 'done']);
-        const statusesClean = statuses?.filter((s) => allowed.has(s)) ?? undefined;
-
-        return {
-            q,
-            statuses: statusesClean?.length ? statusesClean : undefined,
-            priorityMin,
-            priorityMax,
-            tagIds: tagIds?.length ? tagIds : undefined,
-            includeBacklog
-        };
-    }
-
-
-    async getBoard(workspaceId: string, runDate?: string, savedViewId?: string): Promise<BoardModel> {
-        await this.assertWorkspaceExists(workspaceId);
-
-        let filters: SavedViewFilters = { includeBacklog: true, q: '' };
-        if (savedViewId) {
-            const sv = await this.loadSavedView(workspaceId, savedViewId);
-            filters = this.normalizeFilters(sv.filters);
-        }
-
-        const q = filters.q ?? '';
-        const statuses = filters.statuses ?? null;
-        const priorityMin = filters.priorityMin ?? null;
-        const priorityMax = filters.priorityMax ?? null;
-        const tagIds = filters.tagIds ?? null;
-        const includeBacklog = filters.includeBacklog ?? true;
-
-        // Columns (igual que ya lo tienes)
-        const columns = await this.prisma.$queryRaw<ColumnRow[]>`
+    // Columns (igual que ya lo tienes)
+    const columns = await this.prisma.$queryRaw<ColumnRow[]>`
     select
       id::text as id,
       key::text as key,
@@ -111,8 +131,8 @@ export class BoardService {
     order by sort_order asc
   `;
 
-        // Tasks + Tags, ahora con filtros por savedView
-        const tasks = await this.prisma.$queryRaw<TaskRow[]>`
+    // Tasks + Tags, ahora con filtros por savedView
+    const tasks = await this.prisma.$queryRaw<TaskRow[]>`
     select
       t.id::text as id,
       t.workspace_id::text as "workspaceId",
@@ -184,44 +204,44 @@ export class BoardService {
       t.created_at asc
   `;
 
-        const tasksByStatus = new Map<string, BoardTaskModel[]>();
+    const tasksByStatus = new Map<string, BoardTaskModel[]>();
 
-        for (const t of tasks) {
-            const mapped: BoardTaskModel = {
-                id: t.id,
-                workspaceId: t.workspaceId,
-                status: t.status,
-                title: t.title,
-                description: t.description,
-                priority: t.priority,
-                dueDate: t.dueDate,
-                sortOrder: t.sortOrder,
-                templateId: t.templateId,
-                tags: this.normalizeTags(t.tags)
-            };
+    for (const t of tasks) {
+      const mapped: BoardTaskModel = {
+        id: t.id,
+        workspaceId: t.workspaceId,
+        status: t.status,
+        title: t.title,
+        description: t.description,
+        priority: t.priority,
+        dueDate: t.dueDate,
+        sortOrder: t.sortOrder,
+        templateId: t.templateId,
+        tags: this.normalizeTags(t.tags)
+      };
 
-            const arr = tasksByStatus.get(mapped.status) ?? [];
-            arr.push(mapped);
-            tasksByStatus.set(mapped.status, arr);
-        }
-
-        const boardColumns: BoardColumnModel[] = columns.map((c) => ({
-            id: c.id,
-            key: c.key,
-            title: c.title,
-            sortOrder: c.sortOrder,
-            tasks: tasksByStatus.get(c.key) ?? []
-        }));
-
-        return {
-            workspaceId,
-            runDate: runDate ?? undefined,
-            columns: boardColumns
-        };
+      const arr = tasksByStatus.get(mapped.status) ?? [];
+      arr.push(mapped);
+      tasksByStatus.set(mapped.status, arr);
     }
 
-    private async loadSavedView(workspaceId: string, savedViewId: string): Promise<SavedViewRow> {
-        const rows = await this.prisma.$queryRaw<SavedViewRow[]>`
+    const boardColumns: BoardColumnModel[] = columns.map((c) => ({
+      id: c.id,
+      key: c.key,
+      title: c.title,
+      sortOrder: c.sortOrder,
+      tasks: tasksByStatus.get(c.key) ?? []
+    }));
+
+    return {
+      workspaceId,
+      runDate: runDate ?? undefined,
+      columns: boardColumns
+    };
+  }
+
+  private async loadSavedView(workspaceId: string, savedViewId: string): Promise<SavedViewRow> {
+    const rows = await this.prisma.$queryRaw<SavedViewRow[]>`
     select
       id::text as id,
       workspace_id::text as "workspaceId",
@@ -232,11 +252,11 @@ export class BoardService {
       and workspace_id = ${workspaceId}::uuid
     limit 1
   `;
-        const row = rows[0];
-        if (!row) {
-            throw new (require('../saved-view/errors/saved-view-not-found.exception').SavedViewNotFoundException)();
-        }
-        return row;
+    const row = rows[0];
+    if (!row) {
+      throw new (require('../saved-view/errors/saved-view-not-found.exception').SavedViewNotFoundException)();
     }
+    return row;
+  }
 
 }

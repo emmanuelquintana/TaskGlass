@@ -17,31 +17,29 @@ export function LiquidGlassDefs() {
                 {/* Standard: sutil pero evidente */}
                 <filter
                     id="tg-liquid-glass-distort"
-                    x="-35%" y="-35%" width="170%" height="170%"
-                    colorInterpolationFilters="sRGB"
+                    x="-20%" y="-20%" width="140%" height="140%"
                     filterUnits="objectBoundingBox"
+                    colorInterpolationFilters="sRGB"
                 >
                     <feTurbulence
                         type="fractalNoise"
-                        baseFrequency="0.003"
+                        baseFrequency="0.01"
                         numOctaves="1"
-                        seed="8"
+                        seed="5"
                         result="noise"
-                    >
-                        {/* Distorsión lenta y pesada */}
-                        <animate attributeName="baseFrequency" dur="25s" values="0.0025;0.0035;0.0025" repeatCount="indefinite" />
-                    </feTurbulence>
+                    />
 
+                    {/* Map noise to displacement - High scale for Lens effect */}
                     <feDisplacementMap
                         in="SourceGraphic"
                         in2="noise"
-                        scale={scale}
+                        scale={scale * 40}
                         xChannelSelector="R"
                         yChannelSelector="G"
                     />
 
-                    {/* suavizado fuerte para efecto de lente */}
-                    <feGaussianBlur stdDeviation={blur} />
+                    {/* Blur to smooth edges */}
+                    <feGaussianBlur stdDeviation={blur * 0.5} />
                 </filter>
 
                 {/* Strong: hover/active más “liquid” */}
