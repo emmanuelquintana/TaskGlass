@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { LiquidConfirmationModal } from '../ui/LiquidConfirmationModal'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Trash2 } from 'lucide-react'
+import { GripVertical, Trash2, XCircle } from 'lucide-react'
 import { useParams } from 'react-router-dom'
-import { useDeleteTasksByFilter } from '../../api/board.api'
+import { useDeleteTasksByFilter, useDeleteColumn } from '../../api/board.api'
 
 // Draggable Column Component
 export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, onAddTask }: { column: any, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: any[], isOverlay?: boolean, onAddTask?: () => void }) {
@@ -23,11 +23,11 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
 
     const { workspaceId } = useParams<{ workspaceId: string }>()
     const deleteTasks = useDeleteTasksByFilter(workspaceId ?? '')
+    const deleteColumn = useDeleteColumn(workspaceId ?? '')
 
-
-
-    // State for confirmation modal
+    // State for confirmation modals
     const [isClearModalOpen, setIsClearModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
     const handleClearColumn = () => {
         if (!workspaceId) return
@@ -36,6 +36,17 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
 
     const confirmClearColumn = async () => {
         await deleteTasks.mutateAsync({ status: column.key })
+        setIsClearModalOpen(false)
+    }
+
+    const handleDeleteColumn = () => {
+        if (!workspaceId) return
+        setIsDeleteModalOpen(true)
+    }
+
+    const confirmDeleteColumn = async () => {
+        await deleteColumn.mutateAsync(column.id)
+        setIsDeleteModalOpen(false)
     }
 
     const style = {
@@ -71,7 +82,7 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
                 style={style}
                 // Use w-[300px] and flex-shrink-0 to prevent squeezing
                 className={`flex flex-col gap-4 rounded-3xl p-4 transition-all duration-300 w-[300px] flex-shrink-0
-                ${isLayoutMode ? 'border-2 border-purple-500/30' : 'border border-transparent'}
+                ${isLayoutMode ? 'border-2 border-purple-500/30 bg-purple-500/5' : 'border border-transparent'}
                 tg-liquid tg-grain tg-interactive hover:brightness-110 group/column`}
             >
                 <div className="flex items-center justify-between pb-2 border-b border-white/5">
@@ -89,15 +100,28 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
                             </span>
                         </div>
                     </div>
-                    {!isLayoutMode && (tasks?.length || 0) > 0 && (
-                        <button
-                            onClick={handleClearColumn}
-                            className="text-white/20 hover:text-red-400 transition-colors p-1 opacity-0 group-hover/column:opacity-100"
-                            title="Clear Column"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    )}
+
+                    <div className="flex items-center gap-1">
+                        {isLayoutMode ? (
+                            <button
+                                onClick={handleDeleteColumn}
+                                className="text-white/20 hover:text-red-500 transition-colors p-1"
+                                title="Delete Column"
+                            >
+                                <XCircle className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            (tasks?.length || 0) > 0 && (
+                                <button
+                                    onClick={handleClearColumn}
+                                    className="text-white/20 hover:text-red-400 transition-colors p-1 opacity-0 group-hover/column:opacity-100"
+                                    title="Clear Column"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            )
+                        )}
+                    </div>
                 </div>
                 {children}
 
@@ -121,6 +145,17 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
                 description={`Are you sure you want to delete all tasks in "${column.title}"? This cannot be undone.`}
                 confirmText="Clear All"
                 cancelText="Cancel"
+                variant="danger"
+            />
+
+            <LiquidConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDeleteColumn}
+                title="Delete Column"
+                description={`Are you sure you want to PERMANENTLY delete the column "${column.title}" and all its tasks? This action is irreversible.`}
+                confirmText="Delete Permanently"
+                cancelText="Keep Column"
                 variant="danger"
             />
         </>

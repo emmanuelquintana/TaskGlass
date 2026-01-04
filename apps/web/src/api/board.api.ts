@@ -147,3 +147,15 @@ export function useDeleteTasksByFilter(workspaceId: string) {
         }
     })
 }
+
+export function useDeleteColumn(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await apiDelete(`/v1/columns/${id}`)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}

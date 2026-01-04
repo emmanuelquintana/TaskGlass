@@ -192,4 +192,29 @@ export class ColumnService {
 
         return updatedRows.sort((a, b) => a.sortOrder - b.sortOrder);
     }
+
+    async delete(id: string): Promise<void> {
+        // 1. Get column info
+        const rows = await this.prisma.$queryRaw<ColumnRow[]>`
+            select id::text as id, workspace_id::text as "workspaceId", "key"::text as "key"
+            from tg_column
+            where id = ${id}::uuid
+        `;
+        const col = rows[0];
+        if (!col) throw new ColumnNotFoundException();
+
+        // 2. Delete tasks with this status in this workspace
+        // This is safe because tg_column has a workspace_id and key is unique per workspace
+        await this.prisma.$executeRaw`
+            delete from tg_task
+            where workspace_id = ${col.workspaceId}::uuid
+              and status = ${col.key}::tg_task_status
+        `;
+
+        // 3. Delete column
+        await this.prisma.$executeRaw`
+            delete from tg_column
+            where id = ${id}::uuid
+        `;
+    }
 }

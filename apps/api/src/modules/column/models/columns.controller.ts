@@ -1,4 +1,4 @@
-import { Body, Controller, Patch, Param, Put } from '@nestjs/common';
+import { Body, Controller, Patch, Param, Put, Delete } from '@nestjs/common';
 import { ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ColumnService } from './column.service';
 import { ColumnModel } from './column.model';
@@ -41,5 +41,12 @@ export class ColumnsController {
     @ApiOkResponseWrapped(ColumnModel)
     async updateSortOrdersBatch(@Body() dto: UpdateColumnSortOrdersDto): Promise<ColumnModel[]> {
         return this.columnService.updateSortOrdersBatch(dto);
+    }
+
+    @ApiParam({ name: 'id', example: '0c5ce8b6-19ac-4cf5-9a1a-7b1cc44d84c2' })
+    @ResponseCode('TG_COL_204')
+    @Delete(':id')
+    async delete(@Param() p: ColumnIdParamDto): Promise<void> {
+        return this.columnService.delete(p.id);
     }
 }
