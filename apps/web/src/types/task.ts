@@ -13,6 +13,8 @@ export interface UpdateTaskDto {
     description?: string;
     status?: 'todo' | 'doing' | 'blocked' | 'done';
     priority?: number;
+    dueDate?: string | null;
+    points?: number;
 }
 
 export interface BatchUpdateTaskSortOrderDto {

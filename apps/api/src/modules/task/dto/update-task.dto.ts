@@ -19,6 +19,18 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsIn(['todo', 'in_progress', 'blocked', 'done'])
   status?: string;
+
+  @ApiProperty({ example: 1, required: false })
+  @IsOptional()
+  priority?: number;
+
+  @ApiProperty({ example: '2024-12-31', required: false })
+  @IsOptional()
+  dueDate?: string;
+
+  @ApiProperty({ example: 5, required: false })
+  @IsOptional()
+  points?: number;
 }
 
 // Updated status to support in_progress

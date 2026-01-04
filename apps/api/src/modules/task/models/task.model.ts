@@ -37,4 +37,7 @@ export class TaskModel {
 
   @ApiProperty({ example: '2025-12-15T12:10:00.000Z', required: false })
   updatedAt?: string;
+
+  @ApiProperty({ example: [], required: false })
+  tags?: any[];
 }

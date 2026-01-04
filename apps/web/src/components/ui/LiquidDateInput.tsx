@@ -16,10 +16,11 @@ export function LiquidDateInput({ value, onChange, label }: LiquidDateInputProps
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect()
             const spaceBelow = window.innerHeight - rect.bottom
-            const showAbove = spaceBelow < 400
+            // Prefer showing below unless very tight space (< 280px)
+            const showAbove = spaceBelow < 280
 
             setCoords({
-                top: showAbove ? rect.top - 340 : rect.bottom + 8,
+                top: showAbove ? rect.top - 330 : rect.bottom + 8,
                 left: rect.left
             })
         }

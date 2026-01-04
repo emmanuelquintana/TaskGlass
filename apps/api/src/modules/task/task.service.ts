@@ -23,6 +23,7 @@ type TaskRow = {
   templateId: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  tags: any; // JSON
 };
 /**
  * TaskService provides CRUD operations for tg_task.
@@ -44,7 +45,8 @@ export class TaskService {
       sortOrder: r.sortOrder,
       templateId: r.templateId ?? undefined,
       createdAt: r.createdAt ? r.createdAt.toISOString() : undefined,
-      updatedAt: r.updatedAt ? r.updatedAt.toISOString() : undefined
+      updatedAt: r.updatedAt ? r.updatedAt.toISOString() : undefined,
+      tags: r.tags || []
     };
   }
   private async assertWorkspaceExists(workspaceId: string): Promise<void> {
@@ -81,31 +83,40 @@ export class TaskService {
 
     const rows = await this.prisma.$queryRaw<TaskRow[]>`
   select
-    id::text as id,
-    workspace_id::text as "workspaceId",
-    status::text as status,
-    title,
-    description,
-    priority::int as priority,
-    due_date::text as "dueDate",
-    sort_order::int as "sortOrder",
-    template_id::text as "templateId",
-    created_at as "createdAt",
-    updated_at as "updatedAt"
-  from tg_task
-  where workspace_id = ${workspaceId}::uuid
-    and (${status}::text is null or status = ${status}::tg_task_status)
-    and (${q} = '' or title ilike ('%' || ${q} || '%'))
+    t.id::text as id,
+    t.workspace_id::text as "workspaceId",
+    t.status::text as status,
+    t.title,
+    t.description,
+    t.priority::int as priority,
+    t.due_date::text as "dueDate",
+    t.sort_order::int as "sortOrder",
+    t.template_id::text as "templateId",
+    t.created_at as "createdAt",
+    t.updated_at as "updatedAt",
+    coalesce(
+        (
+            select json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+            from tg_task_tag tt
+            join tg_tag tg on tg.id = tt.tag_id
+            where tt.task_id = t.id
+        ),
+        '[]'::json
+    ) as tags
+  from tg_task t
+  where t.workspace_id = ${workspaceId}::uuid
+    and (${status}::text is null or t.status = ${status}::tg_task_status)
+    and (${q} = '' or t.title ilike ('%' || ${q} || '%'))
   order by
-    case status::text
+    case t.status::text
       when 'todo' then 1
       when 'in_progress' then 2
       when 'blocked' then 3
       when 'done' then 4
       else 99
     end asc,
-    sort_order asc,
-    created_at asc
+    t.sort_order asc,
+    t.created_at asc
   limit ${size}
   offset ${offset}
 `;
@@ -118,15 +129,26 @@ export class TaskService {
   async getById(id: string): Promise<TaskModel> {
     const rows = await this.prisma.$queryRaw<TaskRow[]>`
       select
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        status::text as status,
-        title,
-        description,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      from tg_task
-      where id = ${id}::uuid
+        t.id::text as id,
+        t.workspace_id::text as "workspaceId",
+        t.status::text as status,
+        t.title,
+        t.description,
+        t.priority::int as priority,
+        t.due_date::text as "dueDate",
+        t.created_at as "createdAt",
+        t.updated_at as "updatedAt",
+         coalesce(
+            (
+                select json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+                from tg_task_tag tt
+                join tg_tag tg on tg.id = tt.tag_id
+                where tt.task_id = t.id
+            ),
+            '[]'::json
+        ) as tags
+      from tg_task t
+      where t.id = ${id}::uuid
       limit 1
     `;
 
@@ -165,11 +187,13 @@ export class TaskService {
             sort_order::int as "sortOrder",
             template_id::text as "templateId",
             created_at as "createdAt",
-            updated_at as "updatedAt"
+            updated_at as "updatedAt",
+            '[]'::json as tags
         `;
       const newTask = rows[0];
 
       // 2. Insert Tags if Present
+      const insertedTags: any[] = [];
       if (dto.tagIds && dto.tagIds.length > 0) {
         const uniqueTags = [...new Set(dto.tagIds)];
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -193,8 +217,8 @@ export class TaskService {
           if (!uuidRegex.test(tagName)) {
             // It's a name, find or create
             // Check if exists
-            const existing = await tx.$queryRaw<{ id: string }[]>`
-                select id from tg_tag 
+            const existing = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
+                select id, name, color from tg_tag 
                 where name = ${tagName} 
                   and workspace_id = ${workspaceId}::uuid
                 limit 1
@@ -202,9 +226,10 @@ export class TaskService {
 
             if (existing[0]) {
               tagIdToLink = existing[0].id;
+              insertedTags.push(existing[0]);
             } else {
               // Create new tag
-              const newTagRows = await tx.$queryRaw<{ id: string }[]>`
+              const newTagRows = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
                     insert into tg_tag (workspace_id, name, group_key, color)
                     values (
                         ${workspaceId}::uuid, 
@@ -213,26 +238,29 @@ export class TaskService {
                         ${tagColor}
                     )
                     on conflict (workspace_id, group_key, name) do update set updated_at = now()
-                    returning id::text
+                    returning id::text, name, color
                 `;
 
               if (newTagRows[0]) {
                 tagIdToLink = newTagRows[0].id;
+                insertedTags.push(newTagRows[0]);
               } else {
-                const retry = await tx.$queryRaw<{ id: string }[]>`
-                        select id from tg_tag 
+                const retry = await tx.$queryRaw<{ id: string, name: string, color: string }[]>`
+                        select id, name, color from tg_tag 
                         where name = ${tagName} 
                           and workspace_id = ${workspaceId}::uuid
                         limit 1
                     `;
-                if (retry[0]) tagIdToLink = retry[0].id;
+                if (retry[0]) {
+                  tagIdToLink = retry[0].id;
+                  insertedTags.push(retry[0]);
+                }
               }
             }
           } else {
             // It was a UUID, just verify/link it. 
-            // If they sent uuid:color, we essentially strip the color and link the uuid. 
-            // Changing color of existing tag by ID is not supported here.
             tagIdToLink = tagName;
+            // We can't easily push to insertedTags without fetching, but we'll assume it exists
           }
 
           if (uuidRegex.test(tagIdToLink)) {
@@ -244,28 +272,44 @@ export class TaskService {
           }
         }
       }
+      newTask.tags = insertedTags;
 
       return this.mapRow(newTask);
     });
   }
 
   async update(id: string, dto: UpdateTaskDto): Promise<TaskModel> {
+    const priority = dto.priority !== undefined ? dto.priority : null;
+    const dueDate = dto.dueDate !== undefined ? dto.dueDate : null;
+
     const rows = await this.prisma.$queryRaw<TaskRow[]>`
-      update tg_task
+      update tg_task t
       set
         title = coalesce(${dto.title ?? null}, title),
         description = coalesce(${dto.description ?? null}, description),
         status = coalesce(${dto.status}::tg_task_status, status),
+        priority = coalesce(${priority}, priority),
+        due_date = coalesce(${dueDate}, due_date),
         updated_at = now()
       where id = ${id}::uuid
       returning
-        id::text as id,
-        workspace_id::text as "workspaceId",
-        status::text as status,
-        title,
-        description,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
+        t.id::text as id,
+        t.workspace_id::text as "workspaceId",
+        t.status::text as status,
+        t.title,
+        t.description,
+        t.priority::int as priority,
+        t.due_date::text as "dueDate",
+        t.sort_order::int as "sortOrder",
+        t.template_id::text as "templateId",
+        t.created_at as "createdAt",
+        t.updated_at as "updatedAt",
+        (
+            select json_agg(json_build_object('id', tg.id, 'name', tg.name, 'color', tg.color))
+            from tg_task_tag tt
+            join tg_tag tg on tg.id = tt.tag_id
+            where tt.task_id = t.id
+        ) as tags
     `;
 
     const updated = rows[0];

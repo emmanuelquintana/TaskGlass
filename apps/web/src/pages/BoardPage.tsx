@@ -565,6 +565,23 @@ export function BoardPage() {
                                 )
                             })}
                         </div>
+
+                        {/* Clear Filters (Moved here for visibility) */}
+                        {(filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0 || filterRecurrentOnly) && (
+                            <button
+                                onClick={() => {
+                                    setFilterQ('')
+                                    setFilterPriorityMin(0)
+                                    setFilterStatuses([])
+                                    setFilterTags([])
+                                    setFilterRecurrentOnly(false)
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20 whitespace-nowrap ml-auto"
+                            >
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                                Clear Filters
+                            </button>
+                        )}
                     </div>
 
                     {/* Tags Filter Row */}
@@ -595,20 +612,7 @@ export function BoardPage() {
                             </div>
                         )}
 
-                        {(filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0) && (
-                            <button
-                                onClick={() => {
-                                    setFilterQ('')
-                                    setFilterPriorityMin(0)
-                                    setFilterStatuses([])
-                                    setFilterTags([])
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20 whitespace-nowrap ml-auto"
-                            >
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                                Clear Filters
-                            </button>
-                        )}
+
                     </div>
                 </div>
 
@@ -645,7 +649,7 @@ export function BoardPage() {
                                                 onClick={() => openCreateModal(c.key)}
                                                 className="w-full py-2.5 text-sm font-medium text-center text-white/40 border border-white/5 border-dashed rounded-2xl hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all duration-300 mt-2"
                                             >
-                                                + Add
+                                                + Añadir tarea
                                             </button>
                                         )}
                                     </SortableColumnItem>
