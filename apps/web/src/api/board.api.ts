@@ -61,9 +61,14 @@ export function useUpdateTask(workspaceId: string) {
 export function useUpdateTaskSortOrder(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
-        mutationFn: async (data: { workspaceId: string; items: { id: string; sortOrder: number }[] }) => {
-            // Assuming batch update for tasks sort order
-            const r = await apiPut<BoardTask[]>('/v1/tasks/sort-order', { items: data.items })
+        mutationFn: async (data: { workspaceId: string; items: { id: string; sortOrder: number; status?: string }[] }) => {
+            if (!data.items?.length) return null
+
+            // Include workspaceId in the body as required by BatchUpdateTaskSortOrderDto
+            const r = await apiPut<BoardTask[]>('/v1/tasks/sort-order', {
+                workspaceId: data.workspaceId,
+                items: data.items
+            })
             return r.data
         },
         onSuccess: () => {
@@ -117,6 +122,7 @@ export function useUpdateColumnSortOrdersBatch(workspaceId: string) {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (items: { id: string; sortOrder: number }[]) => {
+            if (!items?.length) return null
             const r = await apiPut<BoardColumn[]>(`/v1/columns/sort-order`, { items })
             return r.data
         },

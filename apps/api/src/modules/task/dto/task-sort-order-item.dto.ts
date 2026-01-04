@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsUUID, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 /**
  * TaskSortOrderItemDto represents a single task reordering operation.
@@ -24,8 +24,8 @@ export class TaskSortOrderItemDto {
     @Min(0)
     sortOrder!: number;
 
-    @ApiPropertyOptional({ example: 'in_progress', enum: ['todo', 'in_progress', 'blocked', 'done'] })
+    @ApiPropertyOptional({ example: 'in_progress' })
     @IsOptional()
-    @IsIn(['todo', 'in_progress', 'blocked', 'done'])
+    @IsString()
     status?: string;
 }

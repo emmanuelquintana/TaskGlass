@@ -16,7 +16,7 @@ export class CreateRecurrenceTemplateDto {
 
   @ApiPropertyOptional({ example: 'todo', description: 'Default status for generated tasks' })
   @IsOptional()
-  @IsIn(['todo', 'in_progress', 'blocked', 'done'])
+  @IsString()
   statusDefault?: string;
 
   @ApiPropertyOptional({ example: 3, minimum: 1, maximum: 5 })

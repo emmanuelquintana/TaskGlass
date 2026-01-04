@@ -24,7 +24,6 @@ import {
 import { Search, Filter, Pencil, Check, Repeat, Plus, X } from 'lucide-react'
 import {
     useBoard,
-    useUpdateTask,
     useCreateTask,
     useUpdateTaskSortOrder,
     useUpdateColumnSortOrdersBatch
@@ -74,7 +73,6 @@ export function BoardPage() {
     })
 
     const createTask = useCreateTask(workspaceId ?? '')
-    const updateTask = useUpdateTask(workspaceId ?? '')
     const updateSort = useUpdateTaskSortOrder(workspaceId ?? '')
     const updateColumnSortBatch = useUpdateColumnSortOrdersBatch(workspaceId ?? '')
     const { mutateAsync: runDaily } = useRunDaily(workspaceId ?? '')
@@ -99,7 +97,6 @@ export function BoardPage() {
 
     const [activeTask, setActiveTask] = useState<any>(null)
     const [activeColumn, setActiveColumn] = useState<any>(null)
-    const [startColumnId, setStartColumnId] = useState<string | null>(null)
 
     const [previewTask, setPreviewTask] = useState<any>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -164,8 +161,6 @@ export function BoardPage() {
 
         if (activeType === 'TASK') {
             setActiveTask(active.data.current?.task)
-            const col = findColumn(active.id as string)
-            if (col) setStartColumnId(col.id)
         }
     }
 
@@ -173,7 +168,6 @@ export function BoardPage() {
         const { active, over } = event
         setActiveTask(null)
         setActiveColumn(null)
-        setStartColumnId(null)
 
         if (!over) return
 
@@ -202,21 +196,20 @@ export function BoardPage() {
 
         if (!activeColumn || !overColumn) return
 
-        const activeColumnId = activeColumn.id
-        const activeColumnKey = activeColumn.key
+        // Efficiently update BOTH status and sort order in one batch call if column exists
+        if (overColumn) {
+            const items = overColumn.tasks.map((t: any, i: number) => ({
+                id: t.id,
+                sortOrder: i + 1,
+                status: overColumn.key // This updates the task status if it moved columns
+            }))
 
-        // If moved to a different column (Status Change)
-        if (startColumnId && startColumnId !== activeColumnId) {
-            await updateTask.mutateAsync({
-                id: activeId,
-                dto: { status: activeColumnKey }
-            })
-        }
-
-        // Sorting update
-        if (activeColumn) {
-            const items = activeColumn.tasks.map((t: any, i: number) => ({ id: t.id, sortOrder: i + 1 }))
-            await updateSort.mutateAsync({ workspaceId: workspaceId!, items })
+            if (items.length > 0) {
+                await updateSort.mutateAsync({
+                    workspaceId: workspaceId!,
+                    items
+                })
+            }
         }
     }
 
@@ -318,7 +311,9 @@ export function BoardPage() {
         if (isLayoutMode) {
             // Save changes
             const items = columns.map((c, i) => ({ id: c.id, sortOrder: i + 1 }))
-            await updateColumnSortBatch.mutateAsync(items)
+            if (items.length > 0) {
+                await updateColumnSortBatch.mutateAsync(items)
+            }
         }
         setIsLayoutMode(!isLayoutMode)
     }
@@ -442,7 +437,7 @@ export function BoardPage() {
                 {!isLoading && board && (
                     <div className="flex-1 overflow-hidden relative pt-6">
                         <LiquidScrollArea orientation="horizontal" className="h-full">
-                            <div className="h-full flex px-4 pb-12 gap-6 min-w-max" ref={colsRef}>
+                            <div className="h-full flex px-4 pt-4 pb-12 gap-6 min-w-max" ref={colsRef}>
                                 <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                                     {columns.map((col) => {
                                         const tasksInColumn = col.tasks || []
