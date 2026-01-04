@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { Home } from "lucide-react";
 import { useWorkspaces } from "../../api/workspace.api";
 import { LiquidSurface } from "../ui/LiquidSurface";
 
@@ -13,6 +14,13 @@ export function Sidebar() {
                     <div className="text-sm font-semibold">Workspaces</div>
                     <div className="text-xs tg-muted">Selecciona uno para ver el board</div>
                 </LiquidSurface>
+
+                <Link to="/" aria-current={loc.pathname === "/" ? "page" : undefined} className="block">
+                    <LiquidSurface className="p-4 rounded-2xl flex items-center gap-3" interactive strong={loc.pathname === "/"}>
+                        <Home size={20} />
+                        <div className="text-sm font-semibold">Home</div>
+                    </LiquidSurface>
+                </Link>
 
                 {isLoading && <LiquidSurface className="p-4 rounded-2xl" interactive> Cargando… </LiquidSurface>}
                 {error && <LiquidSurface className="p-4 rounded-2xl" interactive> Error cargando workspaces </LiquidSurface>}

@@ -33,30 +33,50 @@ export function useButtonHover(ref: React.RefObject<HTMLElement | null>) {
     }, { scope: ref })
 }
 
-/**
- * Hook for modal entry animations.
- * "Pops" in from slightly below with a scale effect.
- */
-export function useModalEnter(ref: React.RefObject<HTMLElement | null>) {
-    useGSAP(() => {
-        if (!ref.current) return
-        gsap.fromTo(ref.current,
-            { opacity: 0, scale: 0.95, y: 10 },
-            { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.7)' }
-        )
-    }, { scope: ref })
-}
+
 
 /**
  * Hook for staggering a list of items.
  * Assumes children have a specific class or are direct children.
  */
-export function useStaggerList(ref: React.RefObject<HTMLElement | null>, selector: string = '> *') {
+interface StaggerOptions {
+    selector?: string
+    delay?: number
+    stagger?: number
+    dependencies?: any[]
+}
+
+export function useStaggerList(ref: React.RefObject<HTMLElement | null>, optionsOrSelector?: string | StaggerOptions) {
+    const dependencies = typeof optionsOrSelector === 'object' ? optionsOrSelector.dependencies : []
+
     useGSAP(() => {
         if (!ref.current) return
-        gsap.fromTo(ref.current.querySelectorAll(selector),
+
+        let selector = '> *'
+        let delay = 0
+        let stagger = 0.05
+
+        if (typeof optionsOrSelector === 'string') {
+            selector = optionsOrSelector
+        } else if (typeof optionsOrSelector === 'object') {
+            selector = optionsOrSelector.selector || '> *'
+            delay = optionsOrSelector.delay || 0
+            stagger = optionsOrSelector.stagger || 0.05
+        }
+
+        // Handle direct children selector safely
+        const targets = selector === '> *'
+            ? Array.from(ref.current.children)
+            : ref.current.querySelectorAll(selector)
+
+        if (!targets || targets.length === 0) return
+
+        // Reset opacity before animating to ensure they are hidden if re-running
+        gsap.set(targets, { opacity: 0, y: 20 })
+
+        gsap.fromTo(targets,
             { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: 'power2.out' }
+            { opacity: 1, y: 0, duration: 0.4, stagger, delay, ease: 'power2.out' }
         )
-    }, { scope: ref })
+    }, { scope: ref, dependencies })
 }

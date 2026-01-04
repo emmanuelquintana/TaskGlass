@@ -402,4 +402,26 @@ export class TaskService {
       };
     });
   }
+
+  async deleteByFilter(workspaceId: string, filter: { status?: string }): Promise<{ count: number }> {
+    await this.assertWorkspaceExists(workspaceId);
+
+    const status = filter.status ?? null;
+    if (!status) {
+      // Safety: Prevent deleting all tasks if no filter provided for now
+      return { count: 0 };
+    }
+
+    const rows = await this.prisma.$queryRaw<{ count: number }[]>`
+      with deleted as (
+        delete from tg_task
+        where workspace_id = ${workspaceId}::uuid
+          and status = ${status}::tg_task_status
+        returning id
+      )
+      select count(*)::int as count from deleted
+    `;
+
+    return { count: rows[0]?.count ?? 0 };
+  }
 }

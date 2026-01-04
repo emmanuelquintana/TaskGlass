@@ -23,7 +23,7 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
 
     // Animation Ref
     const formRef = useRef<HTMLDivElement>(null)
-    useStaggerList(formRef)
+    useStaggerList(formRef, { delay: 0.2, dependencies: [isOpen] })
 
     useEffect(() => {
         if (task) {

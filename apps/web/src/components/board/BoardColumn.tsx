@@ -1,6 +1,8 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, Trash2 } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { useDeleteTasksByFilter } from '../../api/board.api'
 
 // Draggable Column Component
 export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, onAddTask }: { column: any, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: any[], isOverlay?: boolean, onAddTask?: () => void }) {
@@ -16,6 +18,16 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
         data: { type: 'COLUMN', column },
         disabled: !isLayoutMode && !isOverlay
     })
+
+    const { workspaceId } = useParams<{ workspaceId: string }>()
+    const deleteTasks = useDeleteTasksByFilter(workspaceId ?? '')
+
+    const handleClearColumn = async () => {
+        if (!workspaceId) return
+        if (window.confirm(`Are you sure you want to delete all tasks in "${column.title}"? This cannot be undone.`)) {
+            await deleteTasks.mutateAsync({ status: column.key })
+        }
+    }
 
     const style = {
         transform: CSS.Translate.toString(transform),
@@ -67,17 +79,28 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, 
                         </span>
                     </div>
                 </div>
+                {!isLayoutMode && (tasks?.length || 0) > 0 && (
+                    <button
+                        onClick={handleClearColumn}
+                        className="text-white/20 hover:text-red-400 transition-colors p-1 opacity-0 group-hover/column:opacity-100"
+                        title="Clear Column"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                )}
             </div>
             {children}
 
-            {onAddTask && !isLayoutMode && (
-                <button
-                    onClick={onAddTask}
-                    className="w-full py-2 border border-white/5 border-dashed rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5 transition-colors"
-                >
-                    + Task
-                </button>
-            )}
-        </div>
+            {
+                onAddTask && !isLayoutMode && (
+                    <button
+                        onClick={onAddTask}
+                        className="w-full py-2 border border-white/5 border-dashed rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+                    >
+                        + Task
+                    </button>
+                )
+            }
+        </div >
     )
 }

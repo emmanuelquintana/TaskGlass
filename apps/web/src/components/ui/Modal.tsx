@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
-import { useModalEnter } from '../../hooks/useAnimations'
+import { useEffect, useRef, useState } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 
 interface ModalProps {
     isOpen: boolean
@@ -10,8 +11,54 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
-    const ref = useRef<HTMLDivElement>(null)
-    useModalEnter(ref)
+    const [shouldRender, setShouldRender] = useState(isOpen)
+    const containerRef = useRef<HTMLDivElement>(null)
+    const contentRef = useRef<HTMLDivElement>(null)
+    const backdropRef = useRef<HTMLDivElement>(null)
+
+    // 1. Sync isOpen -> shouldRender (Open logic)
+    useEffect(() => {
+        if (isOpen && !shouldRender) {
+            setShouldRender(true)
+        }
+    }, [isOpen, shouldRender])
+
+    // 2. Handle Animations (runs when isOpen or shouldRender changes)
+    useGSAP(() => {
+        // If not rendering or refs missing, we can't animate
+        if (!shouldRender || !contentRef.current || !backdropRef.current) return
+
+        // Kill any ongoing animations to prevent conflicts
+        gsap.killTweensOf([contentRef.current, backdropRef.current])
+
+        if (isOpen) {
+            // Enter Animation
+            const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+
+            // Set initial state
+            gsap.set(backdropRef.current, { opacity: 0 })
+            gsap.set(contentRef.current, { opacity: 0, scale: 0.95, y: 10 })
+
+            tl.to(backdropRef.current, { opacity: 1, duration: 0.3 })
+                .to(contentRef.current, {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    duration: 0.4,
+                    ease: 'back.out(1.7)'
+                }, '-=0.2')
+
+        } else {
+            // Exit Animation
+            const tl = gsap.timeline({
+                defaults: { ease: 'power2.in' },
+                onComplete: () => setShouldRender(false)
+            })
+
+            tl.to(contentRef.current, { opacity: 0, scale: 0.95, y: 10, duration: 0.3 })
+                .to(backdropRef.current, { opacity: 0, duration: 0.3 }, '-=0.2')
+        }
+    }, { dependencies: [isOpen, shouldRender] })
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -27,19 +74,23 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
         }
     }, [isOpen, onClose])
 
-    if (!isOpen) return null
+    if (!shouldRender) return null
 
     return (
-        <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
+        <div
+            ref={containerRef}
+            className="fixed inset-0 z-[50] flex items-center justify-center p-4"
+        >
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+                ref={backdropRef}
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 onClick={onClose}
             />
 
             {/* Modal Content */}
             <div
-                ref={ref}
+                ref={contentRef}
                 className={`relative w-full max-w-lg overflow-hidden tg-liquid tg-grain rounded-3xl shadow-2xl ${className}`}
             >
                 {/* Header */}

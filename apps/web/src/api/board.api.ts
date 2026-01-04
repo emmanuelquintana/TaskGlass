@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiGet, apiPatch, apiPut, apiPost } from '../lib/http'
+import { apiGet, apiPatch, apiPut, apiPost, apiDelete } from '../lib/http'
 import type { Board, BoardColumn, BoardTask } from '../types/board'
 
 export function useBoard(workspaceId: string, params?: {
@@ -118,6 +118,22 @@ export function useUpdateColumnSortOrdersBatch(workspaceId: string) {
     return useMutation({
         mutationFn: async (items: { id: string; sortOrder: number }[]) => {
             const r = await apiPut<BoardColumn[]>(`/v1/columns/sort-order`, { items })
+            return r.data
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['board', workspaceId] })
+        }
+    })
+}
+
+export function useDeleteTasksByFilter(workspaceId: string) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: async (filter: { status?: string }) => {
+            const search = new URLSearchParams()
+            if (filter.status) search.set('status', filter.status)
+
+            const r = await apiDelete<{ count: number }>(`/v1/workspaces/${workspaceId}/tasks?${search.toString()}`)
             return r.data
         },
         onSuccess: () => {

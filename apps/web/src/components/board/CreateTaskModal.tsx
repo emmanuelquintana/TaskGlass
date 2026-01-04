@@ -27,9 +27,11 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
 
     const [isLoading, setIsLoading] = useState(false)
 
-    // Animation Ref
-    const formRef = useRef<HTMLFormElement>(null)
-    useStaggerList(formRef)
+    // Animation Ref - Use state to trigger effect when element mounts
+    const [formEl, setFormEl] = useState<HTMLFormElement | null>(null)
+    const formRef = { current: formEl }
+
+    useStaggerList(formRef, { delay: 0.2, dependencies: [isOpen, formEl] })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -76,7 +78,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isRecurrent ? "Create Daily Routine" : "Create New Task"}>
-            <form onSubmit={handleSubmit} className="space-y-4" ref={formRef}>
+            <form onSubmit={handleSubmit} className="space-y-4" ref={setFormEl}>
 
                 {/* Header Toggle for Recurrence */}
                 <div className="flex items-center justify-end mb-2">
@@ -151,7 +153,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                     </div>
                 </div>
 
-                <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-1">
                     <LiquidTagInput
                         label="Tags"
                         value={tags}
@@ -161,7 +163,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
                 </div>
 
                 {isRecurrent && (
-                    <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-200/70 animate-in fade-in">
+                    <div className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs text-purple-200/70">
                         This task will be automatically created every day at midnight in the <strong>{initialStatus}</strong> column.
                     </div>
                 )}

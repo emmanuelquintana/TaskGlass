@@ -80,7 +80,10 @@ export function BoardPage() {
 
     // Global Animations
     useGSAP(() => {
-        if (isLoading) return
+        if (isLoading) {
+            gsap.set([headerRef.current, filtersRef.current, tagsRef.current], { opacity: 0 })
+            return
+        }
 
         const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
         gsap.set([headerRef.current, filtersRef.current], { opacity: 0, y: -20 })

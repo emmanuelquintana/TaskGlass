@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBody, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ResponseCode } from '../../common/decorators/response-code.decorator';
 import { ApiOkResponseWrapped } from '../../common/response/swagger-response.decorator';
@@ -7,11 +7,13 @@ import { WorkspaceIdParamDto } from './dto/workspace-id.param.dto';
 import { ListTasksQueryDto } from './dto/list-tasks.query.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { TaskModel } from './models/task.model';
+import { DeleteTasksQueryDto } from './dto/delete-tasks-filter.dto';
+import { DeleteTasksResultModel } from './models/delete-tasks-result.model';
 
 @ApiTags('tasks')
 @Controller('workspaces/:workspaceId/tasks')
 export class WorkspaceTasksController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(private readonly taskService: TaskService) { }
 
   @Get()
   @ApiParam({ name: 'workspaceId', example: '3f2c9a2e-7a1d-4b2f-9c2f-2a7f5b9d1c11' })
@@ -36,5 +38,13 @@ export class WorkspaceTasksController {
   @ApiOkResponseWrapped(TaskModel)
   async create(@Param() p: WorkspaceIdParamDto, @Body() dto: CreateTaskDto): Promise<TaskModel> {
     return this.taskService.create(p.workspaceId, dto);
+  }
+
+  @Delete()
+  @ApiParam({ name: 'workspaceId', example: '3f2c9a2e-7a1d-4b2f-9c2f-2a7f5b9d1c11' })
+  @ResponseCode('TG_TS_200')
+  @ApiOkResponseWrapped(DeleteTasksResultModel)
+  async delete(@Param() p: WorkspaceIdParamDto, @Query() q: DeleteTasksQueryDto): Promise<DeleteTasksResultModel> {
+    return this.taskService.deleteByFilter(p.workspaceId, { status: q.status });
   }
 }
