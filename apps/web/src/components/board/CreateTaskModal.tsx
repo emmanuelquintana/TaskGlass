@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { Modal } from '../ui/Modal'
 import { LiquidDateInput } from '../ui/LiquidDateInput'
 import { LiquidSelect } from '../ui/LiquidSelect'
@@ -24,6 +26,23 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
     const [isRecurrent, setIsRecurrent] = useState(false)
 
     const [isLoading, setIsLoading] = useState(false)
+
+    // Animation Ref
+    const formRef = useRef<HTMLFormElement>(null)
+
+    useGSAP(() => {
+        if (isOpen && formRef.current) {
+            gsap.set(formRef.current.children, { opacity: 0, y: 20 })
+            gsap.to(formRef.current.children, {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: 0.05,
+                ease: 'power3.out',
+                delay: 0.1
+            })
+        }
+    }, [isOpen])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -70,7 +89,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isRecurrent ? "Create Daily Routine" : "Create New Task"}>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" ref={formRef}>
 
                 {/* Header Toggle for Recurrence */}
                 <div className="flex items-center justify-end mb-2">

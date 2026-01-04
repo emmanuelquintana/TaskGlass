@@ -233,6 +233,39 @@ function SortableTaskItem({ task, onClick }: { task: any, onClick: (t: any) => v
 
 export function BoardPage() {
     const { workspaceId } = useParams()
+
+    // Refs for animations
+    const containerRef = useRef<HTMLDivElement>(null)
+    const headerRef = useRef<HTMLDivElement>(null)
+    const filtersRef = useRef<HTMLDivElement>(null)
+    const tagsRef = useRef<HTMLDivElement>(null)
+
+    // Global Animations
+    useGSAP(() => {
+        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+
+        // Initial states
+        gsap.set([headerRef.current, filtersRef.current], { opacity: 0, y: -20 })
+        gsap.set(tagsRef.current, { opacity: 0, y: 10 })
+
+        tl.to(headerRef.current, {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.1
+        })
+            .to(filtersRef.current, {
+                y: 0,
+                opacity: 1,
+                duration: 0.6
+            }, '-=0.4')
+            .to(tagsRef.current, {
+                y: 0,
+                opacity: 1,
+                duration: 0.6
+            }, '-=0.4')
+
+    }, { scope: containerRef })
     console.log('BoardPage Render:', { workspaceId })
 
     const [runDate, setRunDate] = useState(todayYYYYMMDD())
@@ -483,10 +516,10 @@ export function BoardPage() {
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
         >
-            <div className="space-y-4">
+            <div className="space-y-4" ref={containerRef}>
                 {/* Board Header & Filters */}
                 <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4" ref={headerRef}>
                         <div>
                             <div className="text-lg font-semibold">Board</div>
                             <div className="text-sm tg-muted">workspace: {workspaceId}</div>
@@ -518,7 +551,7 @@ export function BoardPage() {
                     </div>
 
                     {/* Filter Bar */}
-                    <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-white/5">
+                    <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-white/5" ref={filtersRef}>
 
                         {/* Search */}
                         <div className="relative group w-full md:w-auto md:min-w-[200px]">
@@ -585,7 +618,7 @@ export function BoardPage() {
                     </div>
 
                     {/* Tags Filter Row */}
-                    <div className="flex items-center justify-between pt-1 pb-1">
+                    <div className="flex items-center justify-between pt-1 pb-1" ref={tagsRef}>
                         {(availableTags.length > 0) && (
                             <div className="flex items-center gap-2 overflow-x-auto tg-scrollbar flex-1 mr-4">
                                 <Filter className="w-3 h-3 text-white/30 flex-shrink-0" />

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { Modal } from '../ui/Modal'
 import { useUpdateTask } from '../../api/board.api'
 import { LiquidInput, LiquidTextArea } from '../ui/LiquidInput'
@@ -18,6 +20,23 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
     const [priority, setPriority] = useState(0)
     const [dueDate, setDueDate] = useState('')
     const [points, setPoints] = useState(0)
+
+    // Animation Ref
+    const formRef = useRef<HTMLDivElement>(null)
+
+    useGSAP(() => {
+        if (isOpen && formRef.current) {
+            gsap.set(formRef.current.children, { opacity: 0, y: 20 })
+            gsap.to(formRef.current.children, {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: 0.05,
+                ease: 'power3.out',
+                delay: 0.1
+            })
+        }
+    }, [isOpen])
 
     useEffect(() => {
         if (task) {
@@ -54,7 +73,7 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Task">
-            <div className="space-y-5">
+            <div className="space-y-5" ref={formRef}>
                 {/* Title */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-white/40 uppercase tracking-wider">Title</label>
