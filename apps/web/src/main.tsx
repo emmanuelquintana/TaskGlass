@@ -5,6 +5,7 @@ import App from './App'
 import './index.css'
 import './app.css'
 import { AppearanceProvider } from './components/providers/AppearanceProvider'
+import { ToastProvider } from './providers/ToastProvider'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,9 +19,11 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
     <AppearanceProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </ToastProvider>
     </AppearanceProvider>
   </QueryClientProvider>
 )

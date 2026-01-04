@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Modal } from '../ui/Modal'
+import { useToast } from '../../providers/ToastProvider'
 import { useUpdateTask } from '../../api/board.api'
 import { LiquidInput, LiquidTextArea } from '../ui/LiquidInput'
 import { LiquidSelect } from '../ui/LiquidSelect'
@@ -15,6 +16,7 @@ interface TaskPreviewModalProps {
 }
 
 export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProps) {
+    const { toast } = useToast()
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [priority, setPriority] = useState(0)
@@ -39,6 +41,17 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
 
     const handleSave = async () => {
         if (!task) return
+
+        // Validation
+        if (!title.trim()) {
+            toast({
+                title: 'Validation Error',
+                message: 'Values cannot be empty! Please enter a title.',
+                type: 'warning'
+            })
+            return
+        }
+
         try {
             await updateTask.mutateAsync({
                 id: task.id,
