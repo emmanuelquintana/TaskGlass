@@ -13,9 +13,10 @@ interface LiquidSelectProps {
     options: SelectOption[]
     placeholder?: string
     label?: string
+    className?: string
 }
 
-export function LiquidSelect({ value, onChange, options, placeholder = 'Select...', label }: LiquidSelectProps) {
+export function LiquidSelect({ value, onChange, options, placeholder = 'Select...', label, className }: LiquidSelectProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
@@ -57,7 +58,7 @@ export function LiquidSelect({ value, onChange, options, placeholder = 'Select..
     const selectedOption = options.find(o => String(o.value) === String(value))
 
     return (
-        <div className="relative w-full" ref={containerRef}>
+        <div className={`relative w-full ${className || ''}`} ref={containerRef}>
             {label && <label className="text-xs tg-muted mb-1 block">{label}</label>}
 
             <button

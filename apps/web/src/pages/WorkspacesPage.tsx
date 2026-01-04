@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useWorkspaces } from '../api/workspace.api'
 import { LiquidSurface } from '../components/ui/LiquidSurface'
 import { Plus, Settings, Briefcase } from 'lucide-react'
@@ -6,12 +6,19 @@ import { CreateWorkspaceModal } from '../components/workspace/CreateWorkspaceMod
 import { EditWorkspaceModal } from '../components/workspace/EditWorkspaceModal'
 import type { Workspace } from '../types/workspace'
 import { Link } from 'react-router-dom'
+import { useStaggerList, useButtonHover } from '../hooks/useAnimations'
 
 export function WorkspacesPage() {
     const { data: workspaces, isLoading, error } = useWorkspaces()
 
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(null)
+
+    const listRef = useRef<HTMLDivElement>(null)
+    const newBtnRef = useRef<HTMLButtonElement>(null)
+
+    useStaggerList(listRef, '.group') // Stagger items with class .group
+    useButtonHover(newBtnRef)
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -23,8 +30,9 @@ export function WorkspacesPage() {
                     <p className="tg-muted mt-1">Manage your team environments and projects.</p>
                 </div>
                 <button
+                    ref={newBtnRef}
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white text-black font-bold rounded-2xl hover:bg-white/90 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
                 >
                     <Plus className="w-5 h-5" />
                     New Workspace
@@ -32,7 +40,7 @@ export function WorkspacesPage() {
             </div>
 
             {/* List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" ref={listRef}>
                 {isLoading && (
                     [1, 2, 3].map(i => (
                         <div key={i} className="h-40 rounded-3xl bg-white/5 animate-pulse" />

@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
 import { Modal } from '../ui/Modal'
 import { LiquidDateInput } from '../ui/LiquidDateInput'
 import { LiquidSelect } from '../ui/LiquidSelect'
 import { LiquidTagInput } from '../ui/LiquidTagInput'
 import { Repeat } from 'lucide-react'
+import { useStaggerList } from '../../hooks/useAnimations'
+import { LiquidButton } from '../ui/LiquidButton'
 
 interface CreateTaskModalProps {
     isOpen: boolean
@@ -29,20 +29,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
 
     // Animation Ref
     const formRef = useRef<HTMLFormElement>(null)
-
-    useGSAP(() => {
-        if (isOpen && formRef.current) {
-            gsap.set(formRef.current.children, { opacity: 0, y: 20 })
-            gsap.to(formRef.current.children, {
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
-                stagger: 0.05,
-                ease: 'power3.out',
-                delay: 0.1
-            })
-        }
-    }, [isOpen])
+    useStaggerList(formRef)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -181,23 +168,24 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, onRecurrenceSubmit,
 
                 {/* Footer Buttons */}
                 <div className="flex justify-end gap-3 pt-4">
-                    <button
+                    <LiquidButton
                         type="button"
+                        variant="ghost"
                         onClick={onClose}
-                        className="rounded-xl px-4 py-2 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+                        className="px-4 py-2 text-sm font-medium"
                     >
                         Cancel
-                    </button>
-                    <button
+                    </LiquidButton>
+                    <LiquidButton
                         type="submit"
                         disabled={!title.trim() || isLoading}
-                        className={`rounded-xl px-6 py-2 text-sm font-bold transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isRecurrent
-                            ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:bg-purple-400'
-                            : 'bg-white text-black hover:bg-white/90'
+                        className={`px-6 py-2 text-sm font-bold shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${isRecurrent
+                            ? '!bg-purple-500 !text-white !shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:!bg-purple-400'
+                            : ''
                             }`}
                     >
                         {isLoading ? 'Saving...' : isRecurrent ? 'Enable Daily Routine' : 'Create Task'}
-                    </button>
+                    </LiquidButton>
                 </div>
             </form>
         </Modal>

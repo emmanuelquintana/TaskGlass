@@ -21,7 +21,7 @@ import {
     horizontalListSortingStrategy,
     verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import { Search, Filter, Pencil, Check, Repeat, Plus } from 'lucide-react'
+import { Search, Filter, Pencil, Check, Repeat, Plus, X } from 'lucide-react'
 import {
     useBoard,
     useUpdateTask,
@@ -34,9 +34,8 @@ import { CreateTaskModal } from '../components/board/CreateTaskModal'
 import { CreateColumnModal } from '../components/board/CreateColumnModal'
 import { LiquidSelect } from '../components/ui/LiquidSelect'
 import { LiquidDateInput } from '../components/ui/LiquidDateInput'
-import { LiquidSurface } from '../components/ui/LiquidSurface'
+import { LiquidButton } from '../components/ui/LiquidButton'
 import { useCreateRecurrenceTemplate, useRunDaily } from '../api/recurrence.api'
-import { createPortal } from 'react-dom'
 import { BoardColumn } from '../components/board/BoardColumn'
 import { TaskCard } from '../components/board/TaskCard'
 import { DroppableColumnBody } from '../components/board/DroppableColumnBody'
@@ -56,17 +55,7 @@ export function BoardPage() {
     const tagsRef = useRef<HTMLDivElement>(null)
 
     // Global Animations
-    useGSAP(() => {
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-        gsap.set([headerRef.current, filtersRef.current], { opacity: 0, y: -20 })
-        gsap.set(tagsRef.current, { opacity: 0, y: 10 })
 
-        if (headerRef.current) {
-            tl.to(headerRef.current, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 })
-                .to(filtersRef.current, { y: 0, opacity: 1, duration: 0.6 }, '-=0.4')
-                .to(tagsRef.current, { y: 0, opacity: 1, duration: 0.6 }, '-=0.4')
-        }
-    }, { scope: containerRef })
 
     const [runDate, setRunDate] = useState(todayYYYYMMDD())
     const [filterQ, setFilterQ] = useState('')
@@ -88,6 +77,21 @@ export function BoardPage() {
     const updateSort = useUpdateTaskSortOrder(workspaceId ?? '')
     const updateColumnSortBatch = useUpdateColumnSortOrdersBatch(workspaceId ?? '')
     const { mutateAsync: runDaily } = useRunDaily(workspaceId ?? '')
+
+    // Global Animations
+    useGSAP(() => {
+        if (isLoading) return
+
+        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
+        gsap.set([headerRef.current, filtersRef.current], { opacity: 0, y: -20 })
+        gsap.set(tagsRef.current, { opacity: 0, y: 10 })
+
+        if (headerRef.current) {
+            tl.to(headerRef.current, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1 })
+                .to(filtersRef.current, { y: 0, opacity: 1, duration: 0.6 }, '-=0.4')
+                .to(tagsRef.current, { y: 0, opacity: 1, duration: 0.6 }, '-=0.4')
+        }
+    }, { scope: containerRef, dependencies: [isLoading] })
 
     const [activeTask, setActiveTask] = useState<any>(null)
     const [activeColumn, setActiveColumn] = useState<any>(null)
@@ -134,13 +138,15 @@ export function BoardPage() {
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
+    const colsRef = useRef<HTMLDivElement>(null)
+    useBoxStagger(colsRef) // Will implement useBoxStagger or just useStaggerList
+
     const openCreateTaskModal = (colKey?: string) => {
         setTargetColumnForCreate(colKey || 'todo')
         setIsCreateOpen(true)
     }
 
     // --- DnD Handlers ---
-
     const findColumn = (id: string) => columns.find(c => c.tasks.some((t: any) => t.id === id) || c.id === id || c.key === id)
 
     const handleDragStart = (event: DragStartEvent) => {
@@ -294,6 +300,16 @@ export function BoardPage() {
         setFilterTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId])
     }
 
+    const clearFilters = () => {
+        setFilterQ('')
+        setFilterPriorityMin(0)
+        setFilterStatuses([])
+        setFilterTags([])
+        setFilterRecurrentOnly(false)
+    }
+
+    const hasFilters = filterQ || filterPriorityMin > 0 || filterStatuses.length > 0 || filterTags.length > 0 || filterRecurrentOnly
+
     const handleToggleLayoutMode = async () => {
         if (isLayoutMode) {
             // Save changes
@@ -313,7 +329,7 @@ export function BoardPage() {
         >
             <div className="space-y-4" ref={containerRef}>
                 {/* Board Header & Filters */}
-                <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 space-y-4">
+                <div className="tg-liquid tg-grain tg-interactive rounded-3xl p-4 space-y-4 relative">
                     <div className="flex items-center justify-between flex-wrap gap-4" ref={headerRef}>
                         <div>
                             <div className="text-lg font-semibold">Board</div>
@@ -325,64 +341,95 @@ export function BoardPage() {
                             <div className="w-[180px]">
                                 <LiquidDateInput value={runDate} onChange={setRunDate} />
                             </div>
-                            <button onClick={handleToggleLayoutMode} className={`p-2 rounded-xl border ${isLayoutMode ? 'bg-green-500/20 text-green-200 border-green-500/50' : 'bg-white/10 text-white border-white/10'}`}>
+                            <LiquidButton variant="icon" isActive={isLayoutMode} onClick={handleToggleLayoutMode}>
                                 {isLayoutMode ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                            </button>
-                            <button onClick={() => setFilterRecurrentOnly(!filterRecurrentOnly)} className={`p-2 rounded-xl border ${filterRecurrentOnly ? 'bg-blue-500/20 text-blue-200 border-blue-500/50' : 'bg-white/10 text-white border-white/10'}`}>
+                            </LiquidButton>
+                            <LiquidButton variant="icon" isActive={filterRecurrentOnly} onClick={() => setFilterRecurrentOnly(!filterRecurrentOnly)} className={filterRecurrentOnly ? "!bg-blue-500/20 !text-blue-200 !border-blue-500/50" : ""}>
                                 <Repeat className="w-4 h-4" />
-                            </button>
+                            </LiquidButton>
                         </div>
                     </div>
 
-                    {/* Filter Bar */}
-                    <div className="flex flex-wrap gap-4 items-center pt-2 border-t border-white/5" ref={filtersRef}>
-                        <div className="relative group w-full md:w-auto md:min-w-[200px]">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-white/80 transition-colors" />
+                    <div className="flex items-center justify-between flex-wrap gap-4" ref={filtersRef}>
+                        <div className="flex items-center gap-2">
+                            <Search className="w-4 h-4 tg-muted" />
                             <input
-                                value={filterQ}
-                                onChange={e => setFilterQ(e.target.value)}
+                                type="text"
                                 placeholder="Search tasks..."
-                                className="w-full bg-black/20 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-sm outline-none focus:bg-black/30 text-white"
+                                className="bg-transparent border-b border-white/10 focus:border-white/30 outline-none text-sm pb-1 tg-text transition-colors"
+                                value={filterQ}
+                                onChange={(e) => setFilterQ(e.target.value)}
                             />
                         </div>
 
-                        <div className="h-8 w-px bg-white/10 mx-1 hidden md:block" />
-
-                        <div className="w-[140px]">
-                            <LiquidSelect
-                                label=""
-                                placeholder="Priority"
-                                value={filterPriorityMin}
-                                onChange={(v) => setFilterPriorityMin(Number(v))}
-                                options={[
-                                    { label: 'All Priorities', value: 0 },
-                                    { label: 'High Only (P1)', value: 1 },
-                                    { label: 'Medium+ (P2+)', value: 2 },
-                                    { label: 'Low+ (P3+)', value: 3 }
-                                ]}
-                            />
+                        <div className="flex items-center gap-4">
+                            {hasFilters && (
+                                <LiquidButton
+                                    variant="ghost"
+                                    onClick={clearFilters}
+                                    className="!text-red-300 hover:!text-red-200 flex items-center gap-2 !px-3 !py-1.5 !bg-red-500/10 hover:!bg-red-500/20"
+                                >
+                                    <span className="font-medium text-xs">Clear</span>
+                                    <X className="w-3 h-3" />
+                                </LiquidButton>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <Filter className="w-4 h-4 tg-muted" />
+                                <LiquidSelect
+                                    options={[
+                                        { value: 0, label: 'All Priorities' },
+                                        { value: 1, label: 'Priority 1+' },
+                                        { value: 2, label: 'Priority 2+' },
+                                        { value: 3, label: 'Priority 3+' },
+                                        { value: 4, label: 'Priority 4+' },
+                                        { value: 5, label: 'Priority 5' },
+                                    ]}
+                                    value={filterPriorityMin}
+                                    onChange={(v) => setFilterPriorityMin(Number(v))}
+                                    className="w-[150px]"
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex bg-black/20 p-1 rounded-xl border border-white/5">
-                            {['todo', 'in_progress', 'blocked', 'done'].map(s => (
-                                <button key={s} onClick={() => toggleStatus(s)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${filterStatuses.includes(s) ? 'bg-white/10 text-white' : 'text-white/40'}`}>
-                                    {s.replace('_', ' ').toUpperCase()}
-                                </button>
+
+
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-wrap" ref={tagsRef}>
+                        {/* Status Filters */}
+                        <div className="flex items-center gap-2">
+                            {columns.map((col: any) => (
+                                <LiquidButton
+                                    key={col.key}
+                                    variant="ghost"
+                                    onClick={() => toggleStatus(col.key)}
+                                    className={`!px-3 !py-1.5 !rounded-lg text-xs font-medium ${filterStatuses.includes(col.key) ? 'bg-white/10 text-white' : 'text-white/40'}`}
+                                >
+                                    {col.title?.toUpperCase()}
+                                </LiquidButton>
+                            ))}
+                        </div>
+
+                        {/* Divider */}
+                        {availableTags.length > 0 && <div className="w-px h-6 bg-white/10" />}
+
+                        {/* Tag Filters */}
+                        <div className="flex items-center gap-2">
+                            {availableTags.map((tag: any) => (
+                                <LiquidButton
+                                    key={tag.id}
+                                    variant="ghost"
+                                    onClick={() => toggleTag(tag.id)}
+                                    className={`!px-2 !py-1 !rounded text-[10px] border ${filterTags.includes(tag.id) ? 'bg-white/10' : 'opacity-60 grayscale'}`}
+                                    style={{ color: tag.color, borderColor: tag.color }}
+                                >
+                                    {tag.name}
+                                </LiquidButton>
                             ))}
                         </div>
                     </div>
 
-                    {/* Tags */}
-                    {availableTags.length > 0 && (
-                        <div className="flex items-center gap-2 overflow-x-auto pb-1" ref={tagsRef}>
-                            <Filter className="w-3 h-3 text-white/30" />
-                            {availableTags.map(tag => (
-                                <button key={tag.id} onClick={() => toggleTag(tag.id)} className={`px-2 py-1 rounded text-[10px] border ${filterTags.includes(tag.id) ? 'bg-white/10' : 'opacity-60 grayscale'}`} style={{ color: tag.color, borderColor: tag.color }}>
-                                    #{tag.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+
                 </div>
 
                 {isLoading && <div className="text-center p-8 text-white/40">Loading board...</div>}
@@ -390,110 +437,102 @@ export function BoardPage() {
                 {/* Board Columns */}
                 {!isLoading && board && (
                     <div className="flex-1 overflow-x-auto pt-6">
-                        <div className="h-full flex px-4 pb-12 gap-6 min-w-fit">
+                        <div className="h-full flex px-4 pb-12 gap-6 min-w-fit" ref={colsRef}>
                             <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                                 {columns.map((col) => {
-                                    const displayedTasks = col.tasks?.filter((t: any) => {
-                                        if (filterRecurrentOnly) return !!t.templateId
-                                        return true
-                                    }) || []
+                                    const tasksInColumn = col.tasks || []
+                                    const filteredTasks = filterRecurrentOnly
+                                        ? tasksInColumn.filter((t: any) => t.templateId)
+                                        : tasksInColumn
 
                                     return (
                                         <BoardColumn
                                             key={col.id}
                                             column={col}
-                                            tasks={col.tasks || []}
-                                            isOverlay={false}
+                                            tasks={filteredTasks}
+                                            onAddTask={() => openCreateTaskModal(col.key)}
                                             isLayoutMode={isLayoutMode}
                                         >
-                                            <SortableContext items={displayedTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
-                                                <DroppableColumnBody columnId={col.key}>
-                                                    <div className="space-y-2 flex-1 min-h-[50px]">
-                                                        {displayedTasks.map((t: any) => (
-                                                            <TaskCard key={t.id} task={t} onClick={(task) => setPreviewTask(task)} />
-                                                        ))}
-                                                        {displayedTasks.length === 0 && (
-                                                            <div className="px-2 py-6 text-sm tg-muted text-center pointer-events-none opacity-50">
-                                                                {filterRecurrentOnly ? 'No recurrent tasks' : 'Empty'}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                            <SortableContext items={filteredTasks.map((t: any) => t.id)} strategy={verticalListSortingStrategy}>
+                                                <DroppableColumnBody columnId={col.id}>
+                                                    {filteredTasks.map((task: any) => (
+                                                        <TaskCard
+                                                            key={task.id}
+                                                            task={task}
+                                                            onClick={(t) => setPreviewTask(t)}
+                                                        />
+                                                    ))}
                                                 </DroppableColumnBody>
                                             </SortableContext>
-
-                                            {!isLayoutMode && !filterRecurrentOnly && (
-                                                <button
-                                                    onClick={() => openCreateTaskModal(col.key)}
-                                                    className="w-full mt-2 py-2 border border-white/5 border-dashed rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5"
-                                                >
-                                                    + Task
-                                                </button>
-                                            )}
                                         </BoardColumn>
                                     )
                                 })}
                             </SortableContext>
 
                             {/* Add Column Button */}
-                            <div className="w-[300px] shrink-0">
+                            <div className="w-[300px] flex-shrink-0 pt-4 opacity-50 hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => setIsCreateColumnOpen(true)}
-                                    className="w-full h-[60px] rounded-xl border-2 border-dashed border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/30 hover:bg-white/5 transition-all text-sm font-semibold gap-2"
+                                    className="w-full h-[150px] border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center gap-2 text-white/40 hover:text-white hover:border-white/20 hover:bg-white/5 transition-all group"
                                 >
-                                    <Plus className="w-5 h-5" />
-                                    Add Column
+                                    <div className="p-3 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors">
+                                        <Plus className="w-6 h-6" />
+                                    </div>
+                                    <span className="font-medium">Add Column</span>
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
-
-                {/* Empty State */}
-                {board?.columns?.length === 0 && (
-                    <div className="mt-12 flex justify-center">
-                        <LiquidSurface className="p-8 rounded-3xl max-w-md text-center space-y-4" interactive>
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 mx-auto flex items-center justify-center border border-white/10 text-white/60 mb-4">
-                                <Plus className="w-8 h-8" />
-                            </div>
-                            <h2 className="text-xl font-bold text-white">Let's set up your board</h2>
-                            <p className="text-white/60">This workspace is empty. Create your first column to get started.</p>
-                            <button
-                                onClick={() => setIsCreateColumnOpen(true)}
-                                className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-white/90 transition-all shadow-lg hover:shadow-white/20 hover:scale-105 active:scale-95"
-                            >
-                                Create First Column
-                            </button>
-                        </LiquidSurface>
-                    </div>
-                )}
-
-                {/* Portals */}
-                {createPortal(
-                    <DragOverlay>
-                        {activeColumn && <BoardColumn column={activeColumn} tasks={activeColumn.tasks} isOverlay />}
-                        {activeTask && <TaskCard task={activeTask} isOverlay />}
-                    </DragOverlay>,
-                    document.body
-                )}
-
-                <TaskPreviewModal
-                    isOpen={!!previewTask}
-                    onClose={() => setPreviewTask(null)}
-                    task={previewTask}
-                />
-                <CreateTaskModal
-                    isOpen={isCreateOpen}
-                    onClose={() => setIsCreateOpen(false)}
-                    initialStatus={targetColumnForCreate}
-                    onSubmit={handleCreateTaskSubmit}
-                    onRecurrenceSubmit={handleCreateRecurrence}
-                />
-                <CreateColumnModal
-                    isOpen={isCreateColumnOpen}
-                    onClose={() => setIsCreateColumnOpen(false)}
-                    workspaceId={workspaceId || ''}
-                />
             </div>
-        </DndContext>
+            {/* Modals */}
+            <TaskPreviewModal
+                isOpen={!!previewTask}
+                onClose={() => setPreviewTask(null)}
+                task={previewTask}
+            />
+
+            <CreateTaskModal
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                onSubmit={handleCreateTaskSubmit}
+                onRecurrenceSubmit={handleCreateRecurrence}
+                initialStatus={targetColumnForCreate}
+            />
+
+            <CreateColumnModal
+                isOpen={isCreateColumnOpen}
+                onClose={() => setIsCreateColumnOpen(false)}
+                workspaceId={workspaceId ?? ''}
+            />
+
+            <DragOverlay>
+                {activeTask && (
+                    <TaskCard
+                        task={activeTask}
+                        isOverlay
+                    />
+                )}
+                {activeColumn && (
+                    <BoardColumn
+                        // id and title removed
+                        column={activeColumn}
+                        tasks={activeColumn.tasks}
+                        isOverlay
+                    />
+                )}
+            </DragOverlay>
+        </DndContext >
     )
 }
+
+function useBoxStagger(ref: any) {
+    useGSAP(() => {
+        if (!ref.current) return
+        gsap.fromTo(ref.current.children,
+            { opacity: 0, x: 50 },
+            { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, ease: 'power3.out' }
+        )
+    }, { scope: ref })
+}
+

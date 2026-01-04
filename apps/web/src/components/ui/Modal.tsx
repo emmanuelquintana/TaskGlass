@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useModalEnter } from '../../hooks/useAnimations'
 
 interface ModalProps {
     isOpen: boolean
@@ -10,6 +11,7 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
     const ref = useRef<HTMLDivElement>(null)
+    useModalEnter(ref)
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -38,7 +40,7 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
             {/* Modal Content */}
             <div
                 ref={ref}
-                className={`relative w-full max-w-lg overflow-hidden tg-liquid tg-grain rounded-3xl shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-5 duration-300 ${className}`}
+                className={`relative w-full max-w-lg overflow-hidden tg-liquid tg-grain rounded-3xl shadow-2xl ${className}`}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-white/5 px-6 py-4 bg-white/5">

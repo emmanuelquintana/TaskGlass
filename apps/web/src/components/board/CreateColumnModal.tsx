@@ -3,6 +3,7 @@ import { Modal } from '../ui/Modal'
 import { LiquidInput } from '../ui/LiquidInput'
 import { useCreateColumn } from '../../api/board.api'
 import { Loader2 } from 'lucide-react'
+import { LiquidButton } from '../ui/LiquidButton'
 
 interface CreateColumnModalProps {
     isOpen: boolean
@@ -59,14 +60,14 @@ export function CreateColumnModal({ isOpen, onClose, workspaceId }: CreateColumn
                 </div>
 
                 <div className="flex justify-end pt-4">
-                    <button
+                    <LiquidButton
                         type="submit"
                         disabled={!title.trim() || !key.trim() || createColumn.isPending}
                         className="flex items-center gap-2 px-6 py-2 bg-white text-black font-bold rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl"
                     >
                         {createColumn.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                         Create Column
-                    </button>
+                    </LiquidButton>
                 </div>
             </form>
         </Modal>

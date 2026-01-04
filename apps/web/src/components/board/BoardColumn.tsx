@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 
 // Draggable Column Component
-export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay }: { column: any, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: any[], isOverlay?: boolean }) {
+export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay, onAddTask }: { column: any, children?: React.ReactNode, isLayoutMode?: boolean, tasks?: any[], isOverlay?: boolean, onAddTask?: () => void }) {
     const {
         attributes,
         listeners,
@@ -69,8 +69,15 @@ export function BoardColumn({ column, children, isLayoutMode, tasks, isOverlay }
                 </div>
             </div>
             {children}
-            {/* Droppable Body Logic is inside children usually, or we can wrap it here if we want strictly BoardColumn to receive tasks */}
-            {/* In BoardPage refactor, children was <DroppableColumnBody>...tasks...</DroppableColumnBody> */}
+
+            {onAddTask && !isLayoutMode && (
+                <button
+                    onClick={onAddTask}
+                    className="w-full py-2 border border-white/5 border-dashed rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                    + Task
+                </button>
+            )}
         </div>
     )
 }

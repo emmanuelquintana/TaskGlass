@@ -4,6 +4,7 @@ import { LiquidInput, LiquidTextArea } from '../ui/LiquidInput'
 import { useUpdateWorkspace, useDeleteWorkspace } from '../../api/workspace.api'
 import { Loader2, Trash2, AlertTriangle } from 'lucide-react'
 import type { Workspace } from '../../types/workspace'
+import { LiquidButton } from '../ui/LiquidButton'
 
 interface EditWorkspaceModalProps {
     isOpen: boolean
@@ -75,14 +76,14 @@ export function EditWorkspaceModal({ isOpen, onClose, workspace }: EditWorkspace
                     </div>
 
                     <div className="flex justify-end border-b border-white/5 pb-6">
-                        <button
+                        <LiquidButton
                             type="submit"
                             disabled={!name.trim() || updateWorkspace.isPending}
                             className="flex items-center gap-2 px-6 py-2 bg-white text-black font-bold rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all shadow-lg"
                         >
                             {updateWorkspace.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                             Save Changes
-                        </button>
+                        </LiquidButton>
                     </div>
                 </form>
 
@@ -108,15 +109,15 @@ export function EditWorkspaceModal({ isOpen, onClose, workspace }: EditWorkspace
                                 Are you sure? This action cannot be undone and will delete all boards and tasks.
                             </p>
                             <div className="flex items-center gap-3">
-                                <button
+                                <LiquidButton
                                     type="button"
                                     onClick={handleDelete}
                                     disabled={deleteWorkspace.isPending}
-                                    className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+                                    className="px-3 py-1.5 bg-red-500 text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2 !border-0"
                                 >
                                     {deleteWorkspace.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                                     Yes, delete it
-                                </button>
+                                </LiquidButton>
                                 <button
                                     type="button"
                                     onClick={() => setConfirmDelete(false)}

@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import gsap from 'gsap'
-import { useGSAP } from '@gsap/react'
 import { Modal } from '../ui/Modal'
 import { useUpdateTask } from '../../api/board.api'
 import { LiquidInput, LiquidTextArea } from '../ui/LiquidInput'
 import { LiquidSelect } from '../ui/LiquidSelect'
 import { LiquidDateInput } from '../ui/LiquidDateInput'
 import { Check, Loader2 } from 'lucide-react'
+import { useStaggerList } from '../../hooks/useAnimations'
+import { LiquidButton } from '../ui/LiquidButton'
 
 interface TaskPreviewModalProps {
     isOpen: boolean
@@ -23,20 +23,7 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
 
     // Animation Ref
     const formRef = useRef<HTMLDivElement>(null)
-
-    useGSAP(() => {
-        if (isOpen && formRef.current) {
-            gsap.set(formRef.current.children, { opacity: 0, y: 20 })
-            gsap.to(formRef.current.children, {
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
-                stagger: 0.05,
-                ease: 'power3.out',
-                delay: 0.1
-            })
-        }
-    }, [isOpen])
+    useStaggerList(formRef)
 
     useEffect(() => {
         if (task) {
@@ -152,14 +139,14 @@ export function TaskPreviewModal({ isOpen, onClose, task }: TaskPreviewModalProp
 
                 {/* Footer Actions */}
                 <div className="flex justify-end pt-4 border-t border-white/5">
-                    <button
+                    <LiquidButton
                         onClick={handleSave}
                         disabled={updateTask.isPending}
                         className="flex items-center gap-2 px-6 py-2 bg-white text-black font-bold rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)]"
                     >
                         {updateTask.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                         Save Changes
-                    </button>
+                    </LiquidButton>
                 </div>
             </div>
         </Modal>
